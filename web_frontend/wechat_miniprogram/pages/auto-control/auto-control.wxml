@@ -1,0 +1,187 @@
+<!--pages/auto-control/auto-control.wxml-->
+<view class="container">
+  <!-- 页面标题 -->
+  <view class="page-header">
+    <view class="header-icon">⚙️</view>
+    <text class="header-title">超限自动控制</text>
+    <text class="header-subtitle">传感器阈值自动触发外设</text>
+  </view>
+
+  <!-- 系统状态卡片 -->
+  <view class="status-card">
+    <view class="status-header">
+      <text class="status-title">系统状态</text>
+      <switch checked="{{autoControlEnabled}}" bindchange="onToggleAutoControl" color="#10b981"/>
+    </view>
+    <view class="status-info">
+      <text class="status-text">{{ruleCount}}/{{maxRules}} 条规则</text>
+      <text class="status-hint">{{autoControlEnabled ? '自动监控中' : '已暂停'}}</text>
+    </view>
+  </view>
+
+  <!-- 规则列表 -->
+  <view class="rules-section">
+    <view class="section-header">
+      <text class="section-title">控制规则</text>
+      <view class="section-actions">
+        <view class="action-btn" bindtap="loadConfigFromDevice">📂 加载</view>
+        <view class="action-btn" bindtap="saveConfigToDevice">💾 保存</view>
+        <view class="action-btn" bindtap="loadDefaultRules">默认</view>
+        <view class="action-btn primary" bindtap="showAddRule">+ 新建</view>
+      </view>
+    </view>
+
+    <!-- 规则卡片列表 -->
+    <view class="rules-list">
+      <block wx:for="{{rules}}" wx:key="id">
+        <view class="rule-card {{item.enabled ? '' : 'disabled'}}">
+          <view class="rule-header">
+            <view class="rule-info">
+              <text class="rule-name">{{item.name}}</text>
+              <view class="rule-id">ID: {{item.id}}</view>
+            </view>
+            <switch checked="{{item.enabled}}" data-id="{{item.id}}" bindchange="onToggleRule" color="#3b82f6"/>
+          </view>
+
+          <view class="rule-condition">
+            <view class="condition-item">
+              <text class="condition-label">当</text>
+              <view class="condition-sensor">{{sensorNames[item.sensor]}}</view>
+              <view class="condition-op">{{conditionNames[item.condition]}}</view>
+              <view class="condition-value">{{item.threshold1}}{{item.condition >= 3 ? '~' + item.threshold2 : ''}}</view>
+            </view>
+            <view class="condition-arrow">↓</view>
+            <view class="condition-action">
+              <text class="action-label">执行</text>
+              <view class="action-device">{{actionNames[item.action]}}</view>
+              <view class="action-param" wx:if="{{item.actionParam}}">({{item.actionParam}})</view>
+            </view>
+          </view>
+
+          <view class="rule-footer">
+            <view class="rule-status {{item.triggered ? 'triggered' : ''}}">
+              <view class="status-dot"></view>
+              <text>{{item.triggered ? '已触发' : '监控中'}}</text>
+            </view>
+            <view class="rule-actions">
+              <view class="rule-btn test" data-id="{{item.id}}" bindtap="testRule">测试</view>
+              <view class="rule-btn edit" data-id="{{item.id}}" bindtap="editRule">编辑</view>
+              <view class="rule-btn delete" data-id="{{item.id}}" bindtap="deleteRule">删除</view>
+            </view>
+          </view>
+        </view>
+      </block>
+
+      <!-- 空状态 -->
+      <view class="empty-state" wx:if="{{rules.length === 0}}">
+        <text class="empty-icon">📋</text>
+        <text class="empty-text">暂无控制规则</text>
+        <text class="empty-hint">点击"加载默认"或"+ 新建"添加规则</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加/编辑规则弹窗 -->
+  <view class="modal {{showModal ? 'show' : ''}}" bindtap="hideModal">
+    <view class="modal-content" catchtap="preventHide">
+      <view class="modal-header">
+        <text class="modal-title">{{editingRuleId ? '编辑规则' : '新建规则'}}</text>
+        <view class="modal-close" bindtap="hideModal">×</view>
+      </view>
+
+      <scroll-view class="modal-body" scroll-y>
+        <!-- 规则名称 -->
+        <view class="form-group">
+          <text class="form-label">规则名称</text>
+          <input class="form-input" placeholder="例如：高温报警" value="{{form.name}}" bindinput="onNameInput"/>
+        </view>
+
+        <!-- 传感器选择 -->
+        <view class="form-group">
+          <text class="form-label">监控传感器</text>
+          <picker mode="selector" range="{{sensorOptions}}" value="{{form.sensorIndex}}" bindchange="onSensorChange">
+            <view class="picker-value">{{sensorOptions[form.sensorIndex]}}</view>
+          </picker>
+        </view>
+
+        <!-- 触发条件 -->
+        <view class="form-row">
+          <view class="form-group half">
+            <text class="form-label">条件</text>
+            <picker mode="selector" range="{{conditionOptions}}" value="{{form.conditionIndex}}" bindchange="onConditionChange">
+              <view class="picker-value">{{conditionOptions[form.conditionIndex]}}</view>
+            </picker>
+          </view>
+          <view class="form-group half">
+            <text class="form-label">阈值1</text>
+            <input class="form-input" type="digit" placeholder="0" value="{{form.threshold1}}" bindinput="onThreshold1Input"/>
+          </view>
+        </view>
+
+        <!-- 阈值2（范围条件使用） -->
+        <view class="form-group" wx:if="{{form.conditionIndex >= 3}}">
+          <text class="form-label">阈值2</text>
+          <input class="form-input" type="digit" placeholder="0" value="{{form.threshold2}}" bindinput="onThreshold2Input"/>
+        </view>
+
+        <!-- 去抖动时间 -->
+        <view class="form-group">
+          <text class="form-label">去抖动时间 (ms)</text>
+          <slider min="0" max="10000" step="100" value="{{form.debounceMs}}" show-value bindchange="onDebounceChange"/>
+          <text class="form-hint">防止传感器抖动导致的误触发</text>
+        </view>
+
+        <!-- 执行动作 -->
+        <view class="form-group">
+          <text class="form-label">执行动作</text>
+          <picker mode="selector" range="{{actionOptions}}" value="{{form.actionIndex}}" bindchange="onActionChange">
+            <view class="picker-value">{{actionOptions[form.actionIndex]}}</view>
+          </picker>
+        </view>
+
+        <!-- 动作参数 -->
+        <view class="form-group" wx:if="{{form.actionIndex === 3 || form.actionIndex === 5 || form.actionIndex === 6 || form.actionIndex === 8}}">
+          <text class="form-label">
+            {{form.actionIndex === 3 ? '蜂鸣器频率 (Hz)' : ''}}
+            {{form.actionIndex === 5 ? '蜂鸣器频率 (Hz)' : ''}}
+            {{form.actionIndex === 6 ? '电机速度 (0-255)' : ''}}
+            {{form.actionIndex === 8 ? '舵机角度 (0-180°)' : ''}}
+          </text>
+          <input class="form-input" type="number" placeholder="0" value="{{form.actionParam}}" bindinput="onActionParamInput"/>
+        </view>
+
+        <!-- 持续时间 -->
+        <view class="form-group" wx:if="{{form.actionIndex === 5}}">
+          <text class="form-label">蜂鸣持续时间 (ms)</text>
+          <slider min="100" max="5000" step="100" value="{{form.durationMs}}" show-value bindchange="onDurationChange"/>
+        </view>
+      </scroll-view>
+
+      <view class="modal-footer">
+        <view class="btn btn-cancel" bindtap="hideModal">取消</view>
+        <view class="btn btn-confirm" bindtap="saveRule">保存</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 帮助提示 -->
+  <view class="help-section">
+    <view class="help-title">💡 使用说明</view>
+    <view class="help-item">
+      <text class="help-dot">•</text>
+      <text class="help-text">设置传感器阈值，当条件满足时自动触发外设</text>
+    </view>
+    <view class="help-item">
+      <text class="help-dot">•</text>
+      <text class="help-text">去抖动时间可防止传感器抖动导致的误触发</text>
+    </view>
+    <view class="help-item">
+      <text class="help-dot">•</text>
+      <text class="help-text">支持温度、湿度、气体、烟雾、水位等多种传感器</text>
+    </view>
+    <view class="help-item">
+      <text class="help-dot">•</text>
+      <text class="help-text">可控制继电器、蜂鸣器、电机、舵机等外设</text>
+    </view>
+  </view>
+</view>

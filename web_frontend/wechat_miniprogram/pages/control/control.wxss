@@ -1,0 +1,2401 @@
+page {
+  background: #080810;
+}
+
+.control-container {
+  min-height: 100vh;
+  background: linear-gradient(165deg, #0a0b1e 0%, #0d1029 25%, #111033 50%, #0e1235 75%, #0a0d1c 100%);
+  padding: 24rpx 28rpx 200rpx 28rpx;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.control-container.light {
+  background: linear-gradient(165deg, #f0f2ff 0%, #e8ecfa 30%, #ede8f7 60%, #eae4f5 100%);
+}
+
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(90rpx);
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.orb-1 {
+  width: 480rpx;
+  height: 480rpx;
+  background: radial-gradient(circle, rgba(99,102,241,0.55) 0%, rgba(139,92,246,0.3) 40%, transparent 70%);
+  top: -120rpx;
+  right: -100rpx;
+  animation: orbFloat1 14s ease-in-out infinite;
+}
+
+.orb-2 {
+  width: 400rpx;
+  height: 400rpx;
+  background: radial-gradient(circle, rgba(16,185,129,0.45) 0%, rgba(6,182,212,0.25) 45%, transparent 70%);
+  bottom: 180rpx;
+  left: -120rpx;
+  animation: orbFloat2 17s ease-in-out infinite;
+}
+
+.orb-3 {
+  width: 340rpx;
+  height: 340rpx;
+  background: radial-gradient(circle, rgba(245,158,11,0.35) 0%, rgba(251,146,60,0.18) 45%, transparent 70%);
+  bottom: -60rpx;
+  right: 15%;
+  animation: orbFloat3 20s ease-in-out infinite;
+}
+
+@keyframes orbFloat1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-40rpx, 50rpx) scale(1.1); }
+  66% { transform: translate(30rpx, -30rpx) scale(0.92); }
+}
+
+@keyframes orbFloat2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(50rpx, -35rpx) scale(1.15); }
+}
+
+@keyframes orbFloat3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30rpx, 30rpx) scale(1.08); }
+  66% { transform: translate(20rpx, -20rpx) scale(0.95); }
+}
+
+.control-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 32rpx;
+  margin-bottom: 28rpx;
+  border-radius: 24rpx;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 100%);
+  backdrop-filter: blur(36px);
+  border: 1rpx solid rgba(255,255,255,0.1);
+  box-shadow:
+    0 6rpx 32rpx rgba(0,0,0,0.3),
+    inset 0 1rpx 0 rgba(255,255,255,0.08),
+    0 0 80rpx rgba(99,102,241,0.06);
+}
+
+.control-container.light .control-header {
+  background: linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(245,243,255,0.94) 100%);
+  border-color: rgba(99,102,241,0.15);
+  box-shadow:
+    0 6rpx 24rpx rgba(99,102,241,0.1),
+    inset 0 1rpx 0 rgba(255,255,255,0.6);
+}
+
+.header-left,
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 150rpx;
+}
+
+.header-right {
+  justify-content: flex-end;
+}
+
+.header-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.header-title {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #e8eaFF;
+  letter-spacing: 6rpx;
+  text-shadow: 0 2rpx 16rpx rgba(99,102,241,0.25);
+  background: linear-gradient(135deg, #fff 0%, #e8eaff 50%, #c7b8ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.control-container.light .header-title {
+  background: linear-gradient(135deg, #1a1560 0%, #4338ca 50%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+.status-dot-wrapper {
+  width: 24rpx;
+  height: 24rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx;
+}
+
+.status-dot-wrapper.online {
+  background: rgba(34,197,94,0.18);
+  box-shadow: 0 0 12rpx rgba(34,197,94,0.2);
+}
+
+.status-dot-wrapper.offline {
+  background: rgba(239,68,68,0.18);
+  box-shadow: 0 0 12rpx rgba(239,68,68,0.2);
+}
+
+.status-dot {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #ef4444;
+}
+
+.status-dot-wrapper.online .status-dot {
+  background: #22c55e;
+  animation: dotPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 8rpx rgba(34,197,94,0.6);
+}
+
+@keyframes dotPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); opacity: 1; }
+  50% { box-shadow: 0 0 10rpx 4rpx rgba(34,197,94,0); opacity: 0.85; }
+}
+
+.header-status {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: rgba(232,234,255,0.75);
+  letter-spacing: 1rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 20rpx;
+  background: rgba(255,255,255,0.05);
+  border: 1rpx solid rgba(255,255,255,0.08);
+}
+
+.status-dot-wrapper.online + .header-status {
+  color: #4ade80;
+  background: rgba(34,197,94,0.1);
+  border-color: rgba(34,197,94,0.2);
+}
+
+.status-dot-wrapper.offline + .header-status {
+  color: #f87171;
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.2);
+}
+
+.control-container.light .header-status {
+  color: rgba(26,21,96,0.6);
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.08);
+}
+
+.control-container.light .status-dot-wrapper.online + .header-status {
+  color: #16a34a;
+  background: rgba(34,197,94,0.12);
+  border-color: rgba(34,197,94,0.25);
+}
+
+.control-container.light .status-dot-wrapper.offline + .header-status {
+  color: #dc2626;
+  background: rgba(239,68,68,0.1);
+  border-color: rgba(239,68,68,0.2);
+}
+
+.refresh-btn {
+  width: 60rpx;
+  height: 60rpx;
+  border-radius: 16rpx;
+  background: rgba(255,255,255,0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border: 1rpx solid rgba(255,255,255,0.08);
+}
+
+.refresh-btn:active {
+  background: rgba(255,255,255,0.14);
+  transform: scale(0.9) rotate(-30deg);
+}
+
+.refresh-icon {
+  font-size: 34rpx;
+  color: rgba(232,234,255,0.6);
+}
+
+.error-banner {
+  position: relative;
+  z-index: 20;
+  display: none;
+  align-items: center;
+  padding: 20rpx 28rpx;
+  margin-bottom: 24rpx;
+  margin-left: 8rpx;
+  border-radius: 0 18rpx 18rpx 0;
+  background: linear-gradient(90deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05), transparent);
+  overflow: hidden;
+  animation: errorSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.error-banner.visible {
+  display: flex;
+}
+
+.error-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5rpx;
+  background: linear-gradient(to bottom, #ef4444, #f97316, #fb923c);
+  border-radius: 5rpx;
+  animation: errorLinePulse 1.5s ease-in-out infinite;
+}
+
+@keyframes errorLinePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8rpx rgba(239,68,68,0.5); }
+  50% { opacity: 0.7; box-shadow: 0 0 16rpx rgba(239,68,68,0.3); }
+}
+
+@keyframes errorSlideIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(-20rpx) translateX(-20rpx); 
+  }
+  to { opacity: 1; transform: translateY(0) translateX(0); }
+}
+
+.error-icon {
+  font-size: 32rpx;
+  margin-right: 14rpx;
+  color: #fca5a5;
+  animation: errorIconShake 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes errorIconShake {
+  from { transform: rotate(-4deg); }
+  to { transform: rotate(4deg); }
+}
+
+.error-text {
+  flex: 1;
+  font-size: 25rpx;
+  color: #fecaca;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.error-dismiss {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: rgba(239,68,68,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26rpx;
+  color: #fca5a5;
+  margin-left: 16rpx;
+  transition: all 0.25s ease;
+  border: 1rpx solid rgba(239,68,68,0.15);
+}
+
+.error-dismiss:active {
+  background: rgba(239,68,68,0.32);
+  transform: scale(0.9);
+}
+
+.device-grid {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+  margin-bottom: 32rpx;
+  padding-right: 4rpx;
+  padding-left: 4rpx;
+}
+
+.device-card {
+  position: relative;
+  border-radius: 24rpx;
+  overflow: hidden;
+  transition: all 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  min-height: 380rpx;
+}
+
+.card-glow {
+  position: absolute;
+  inset: -6rpx;
+  border-radius: 30rpx;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  filter: blur(22rpx);
+  z-index: -1;
+}
+
+.relay-glow {
+  background: linear-gradient(135deg, rgba(16,185,129,0.45), rgba(5,150,105,0.2), rgba(16,185,129,0.1));
+}
+
+.buzzer-glow {
+  background: linear-gradient(135deg, rgba(59,130,246,0.45), rgba(37,99,235,0.2), rgba(59,130,246,0.1));
+}
+
+.motor-glow {
+  background: linear-gradient(135deg, rgba(139,92,246,0.45), rgba(124,58,237,0.2), rgba(139,92,246,0.1));
+}
+
+.servo-glow {
+  background: linear-gradient(135deg, rgba(245,158,11,0.3), rgba(217,119,6,0.12), rgba(245,158,11,0.06));
+  opacity: 0.5 !important;
+}
+
+.device-card.active .card-glow {
+  opacity: 1;
+  animation: glowBreath 3.5s ease-in-out infinite;
+}
+
+@keyframes glowBreath {
+  0%, 100% { opacity: 0.65; filter: blur(22rpx); }
+  50% { opacity: 1; filter: blur(30rpx); }
+}
+
+.card-inner {
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(168deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.025) 50%, rgba(255,255,255,0.01) 100%);
+  backdrop-filter: blur(28px);
+  border-radius: 24rpx;
+  padding: 26rpx;
+  border: 1rpx solid rgba(255,255,255,0.09);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255,255,255,0.08),
+    0 10rpx 40rpx rgba(0,0,0,0.25),
+    0 0 60rpx rgba(99,102,241,0.03);
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.device-card.active .card-inner {
+  border-color: rgba(255,255,255,0.15);
+  background: linear-gradient(168deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.045) 50%, rgba(255,255,255,0.02) 100%);
+  box-shadow:
+    inset 0 1rpx 0 rgba(255,255,255,0.12),
+    0 14rpx 48rpx rgba(0,0,0,0.3),
+    0 0 80rpx rgba(99,102,241,0.08);
+  transform: translateY(-3rpx);
+}
+
+.control-container.light .card-inner {
+  background: linear-gradient(168deg, rgba(255,255,255,0.9) 0%, rgba(250,248,255,0.96) 100%);
+  border-color: rgba(200,195,230,0.35);
+  box-shadow:
+    0 8rpx 28rpx rgba(99,102,241,0.08),
+    inset 0 1rpx 0 rgba(255,255,255,0.7);
+}
+
+.card-top-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 18rpx;
+  margin-bottom: 22rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid rgba(255,255,255,0.06);
+}
+
+.control-container.light .card-top-bar {
+  border-bottom-color: rgba(0,0,0,0.06);
+}
+
+.device-icon {
+  width: 76rpx;
+  height: 76rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.relay-icon {
+  background: linear-gradient(145deg, #10b981 0%, #059669 50%, #047857 100%);
+  box-shadow:
+    0 8rpx 24rpx rgba(16,185,129,0.38),
+    inset 0 1rpx 0 rgba(255,255,255,0.25),
+    inset 0 -2rpx 0 rgba(0,0,0,0.1);
+}
+
+.buzzer-icon {
+  background: linear-gradient(145deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  box-shadow:
+    0 8rpx 24rpx rgba(59,130,246,0.38),
+    inset 0 1rpx 0 rgba(255,255,255,0.25),
+    inset 0 -2rpx 0 rgba(0,0,0,0.1);
+}
+
+.motor-icon {
+  background: linear-gradient(145deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+  box-shadow:
+    0 8rpx 24rpx rgba(139,92,246,0.38),
+    inset 0 1rpx 0 rgba(255,255,255,0.25),
+    inset 0 -2rpx 0 rgba(0,0,0,0.1);
+}
+
+.servo-icon {
+  background: linear-gradient(145deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  box-shadow:
+    0 8rpx 24rpx rgba(245,158,11,0.38),
+    inset 0 1rpx 0 rgba(255,255,255,0.25),
+    inset 0 -2rpx 0 rgba(0,0,0,0.1);
+}
+
+.icon-symbol {
+  font-size: 38rpx;
+  color: #fff;
+  text-shadow: 0 2rpx 8rpx rgba(0,0,0,0.25);
+}
+
+.device-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6rpx;
+  padding-top: 4rpx;
+}
+
+.device-name {
+  font-size: 32rpx;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 1.5rpx;
+  display: block;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #fff 0%, #e8eaff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.control-container.light .device-name {
+  background: linear-gradient(135deg, #1a1560 0%, #4338ca 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.device-sub {
+  font-size: 20rpx;
+  color: rgba(232,234,255,0.5);
+  display: block;
+  font-weight: 500;
+  letter-spacing: 1.5rpx;
+  text-transform: uppercase;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.control-container.light .device-sub {
+  color: rgba(26,21,96,0.45);
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 10rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 1rpx;
+  margin-top: 4rpx;
+}
+
+.badge-on {
+  background: linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.1));
+  color: #4ade80;
+  border: 1.5rpx solid rgba(34,197,94,0.35);
+  box-shadow: 0 0 16rpx rgba(34,197,94,0.15), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+
+.badge-off {
+  background: linear-gradient(135deg, rgba(100,116,139,0.15), rgba(71,85,105,0.08));
+  color: #94a3b8;
+  border: 1.5rpx solid rgba(100,116,139,0.25);
+  box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.05);
+}
+
+.badge-neutral {
+  background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.1));
+  color: #fbbf24;
+  border: 1.5rpx solid rgba(245,158,11,0.35);
+  box-shadow: 0 0 14rpx rgba(245,158,11,0.12), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+
+.badge-dot {
+  width: 9rpx;
+  height: 9rpx;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badge-on .badge-dot {
+  animation: badgeDotBlink 1.6s ease-in-out infinite;
+  box-shadow: 0 0 6rpx currentColor;
+}
+
+@keyframes badgeDotBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.8); }
+}
+
+.card-divider {
+  height: 1rpx;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 20%, rgba(255,255,255,0.1) 80%, transparent 100%);
+  margin-bottom: 22rpx;
+}
+
+.card-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  flex: 1;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.state-pill {
+  padding: 10rpx 24rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+}
+
+.pill-on {
+  background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(34,197,94,0.1));
+  color: #4ade80;
+  border: 1.5rpx solid rgba(34,197,94,0.35);
+  box-shadow: 0 0 12rpx rgba(34,197,94,0.15), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+
+.pill-off {
+  background: linear-gradient(135deg, rgba(100,116,139,0.15), rgba(71,85,105,0.08));
+  color: #94a3b8;
+  border: 1.5rpx solid rgba(100,116,139,0.25);
+  box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.05);
+}
+
+.action-grid {
+  display: flex;
+  gap: 12rpx;
+}
+
+.action-chip {
+  flex: 1;
+  text-align: center;
+  padding: 18rpx 0;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  transition: all 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border: 1.5rpx solid transparent;
+  letter-spacing: 2rpx;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.08);
+}
+
+.action-chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.action-chip:active::before {
+  opacity: 1;
+}
+
+.action-chip text {
+  color: inherit;
+  position: relative;
+  z-index: 1;
+}
+
+.chip-green {
+  background: linear-gradient(135deg, rgba(16,185,129,0.18), rgba(16,185,129,0.08));
+  color: #4ade80;
+  border-color: rgba(16,185,129,0.35);
+  box-shadow: 0 0 16rpx rgba(16,185,129,0.12), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+
+.chip-red {
+  background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(239,68,68,0.08));
+  color: #f87171;
+  border-color: rgba(239,68,68,0.35);
+  box-shadow: 0 0 16rpx rgba(239,68,68,0.12), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+
+.chip-amber {
+  background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.08));
+  color: #fbbf24;
+  border-color: rgba(245,158,11,0.35);
+  box-shadow: 0 0 16rpx rgba(245,158,11,0.12), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+
+.chip-hover {
+  transform: scale(0.95);
+  opacity: 0.85;
+}
+
+.freq-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 24rpx;
+  background: rgba(255,255,255,0.05);
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(255,255,255,0.08);
+}
+
+.freq-label {
+  font-size: 26rpx;
+  color: rgba(232,234,255,0.75);
+  font-weight: 600;
+  letter-spacing: 1rpx;
+}
+
+.freq-picker {
+  display: flex;
+  align-items: baseline;
+  gap: 6rpx;
+  padding: 12rpx 20rpx;
+  background: linear-gradient(135deg, rgba(59,130,246,0.18), rgba(59,130,246,0.08));
+  border-radius: 12rpx;
+  border: 1.5rpx solid rgba(59,130,246,0.3);
+  box-shadow: 0 0 16rpx rgba(59,130,246,0.12), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+
+.freq-picker text:first-child {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #60a5fa;
+  letter-spacing: 0.5rpx;
+}
+
+.freq-unit {
+  font-size: 22rpx;
+  color: rgba(96,165,250,0.8);
+  font-weight: 600;
+}
+
+.picker-arrow {
+  font-size: 22rpx;
+  color: rgba(96,165,250,0.65);
+  margin-left: 4rpx;
+}
+
+/* 紧凑顶部栏 */
+.compact-top {
+  min-height: auto !important;
+  padding-bottom: 8rpx !important;
+}
+
+/* 继电器优化布局 */
+.relay-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.action-btn {
+  width: 120rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  letter-spacing: 2rpx;
+  transition: all 0.2s ease;
+}
+
+.btn-on {
+  background: rgba(16,185,129,0.15);
+  border: 2rpx solid rgba(16,185,129,0.3);
+  color: #6ee7b7;
+}
+.btn-on.btn-active {
+  background: rgba(16,185,129,0.4);
+  border-color: #10b981;
+  box-shadow: 0 0 20rpx rgba(16,185,129,0.3);
+}
+
+.btn-off {
+  background: rgba(239,68,68,0.15);
+  border: 2rpx solid rgba(239,68,68,0.3);
+  color: #fca5a5;
+}
+.btn-off.btn-active {
+  background: rgba(239,68,68,0.4);
+  border-color: #ef4444;
+  box-shadow: 0 0 20rpx rgba(239,68,68,0.3);
+}
+
+.btn-toggle {
+  background: rgba(245,158,11,0.15);
+  border: 2rpx solid rgba(245,158,11,0.3);
+  color: #fbbf24;
+  font-size: 32rpx;
+}
+
+.btn-press {
+  transform: scale(0.92) !important;
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 10rpx 24rpx;
+  border-radius: 30rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.status-line.status-on {
+  background: rgba(16,185,129,0.12);
+  color: #6ee7b7;
+}
+.status-line.status-on .status-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 10rpx #10b981;
+  animation: statusPulse 1.5s ease-in-out infinite;
+}
+
+.status-line.status-off {
+  background: rgba(107,114,128,0.12);
+  color: #9ca3af;
+}
+.status-line.status-off .status-dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #6b7280;
+}
+
+@keyframes statusPulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 10rpx #10b981; }
+  50% { opacity: 0.5; box-shadow: 0 0 4rpx #10b981; }
+}
+
+/* 蜂鸣器频率状态显示 */
+.buzzer-status-freq {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20rpx 0 8rpx;
+  position: relative;
+}
+
+.freq-display-ring {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  border: 4rpx solid rgba(59,130,246,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  animation: ringRotate 3s linear infinite;
+}
+
+@keyframes ringRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.freq-current-value {
+  font-size: 56rpx;
+  font-weight: 800;
+  color: #60a5fa;
+  text-shadow: 0 0 20rpx rgba(96,165,250,0.5);
+  line-height: 1.2;
+}
+
+.freq-unit-label {
+  font-size: 22rpx;
+  color: rgba(167,139,250,0.85);
+  font-weight: 500;
+  letter-spacing: 2rpx;
+  margin-top: 4rpx;
+}
+
+/* 蜂鸣器紧凑控制 */
+.buzzer-controls-compact {
+  padding: 16rpx 0;
+}
+
+.freq-control-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  margin-bottom: 8rpx;
+}
+
+.freq-picker-mini {
+  display: flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 14rpx 18rpx;
+  background: rgba(59,130,246,0.12);
+  border-radius: 12rpx;
+  border: 1rpx solid rgba(59,130,246,0.25);
+}
+
+.freq-num {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #93c5fd;
+  min-width: 52rpx;
+  text-align: center;
+}
+
+.freq-u {
+  font-size: 22rpx;
+  color: rgba(147,197,253,0.75);
+}
+
+.arrow-down {
+  font-size: 18rpx;
+  color: rgba(147,197,253,0.6);
+}
+
+.freq-custom-input {
+  flex: 1;
+  height: 60rpx;
+  padding: 0 14rpx;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10rpx;
+  border: 1rpx solid rgba(255,255,255,0.08);
+  font-size: 24rpx;
+  color: rgba(232,234,255,0.85);
+}
+
+.freq-confirm-btn {
+  height: 60rpx;
+  padding: 0 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(99,102,241,0.8), rgba(79,70,229,0.7));
+  border-radius: 10rpx;
+  font-size: 22rpx;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1rpx;
+}
+
+.freq-range-tip {
+  font-size: 20rpx;
+  color: rgba(232,234,255,0.35);
+  text-align: center;
+  margin-bottom: 16rpx;
+}
+
+.beep-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 20rpx;
+  border-radius: 14rpx;
+  background: linear-gradient(135deg, rgba(6,182,212,0.2), rgba(8,145,178,0.12));
+  border: 1rpx solid rgba(6,182,212,0.3);
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #67e8f9;
+}
+
+.beep-btn.beep-active {
+  background: linear-gradient(135deg, rgba(6,182,212,0.4), rgba(8,145,178,0.25));
+  border-color: rgba(6,182,212,0.5);
+  animation: beepPulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes beepPulse {
+  from { opacity: 0.8; }
+  to { opacity: 1; }
+}
+
+.beep-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+  padding: 24rpx;
+  border-radius: 18rpx;
+  background: linear-gradient(135deg, rgba(6,182,212,0.25), rgba(8,145,178,0.15));
+  border: 1.5rpx solid rgba(6,182,212,0.35);
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #67e8f9;
+  transition: all 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  letter-spacing: 2rpx;
+  box-shadow: 0 0 20rpx rgba(6,182,212,0.15), inset 0 1rpx 0 rgba(255,255,255,0.1);
+}
+
+.beep-trigger.trigger-active {
+  background: linear-gradient(135deg, rgba(6,182,212,0.45), rgba(8,145,178,0.25));
+  border-color: rgba(6,182,212,0.5);
+  animation: beepGlow 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes beepGlow {
+  from { box-shadow: 0 0 0 0 rgba(6,182,212,0.4); }
+  to { box-shadow: 0 0 32rpx 6rpx rgba(6,182,212,0.15); }
+}
+
+.beep-icon,
+.beep-loading {
+  font-size: 32rpx;
+}
+
+.beep-loading {
+  animation: spinSlow 1s linear infinite;
+}
+
+@keyframes spinSlow {
+  to { transform: rotate(360deg); }
+}
+
+.trigger-press {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+/* ========== 电机主开关样式 ========== */
+.motor-main-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14rpx 18rpx;
+  background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(124,58,237,0.03));
+  border-radius: 14rpx;
+  border: 1rpx solid rgba(139,92,246,0.1);
+  margin-bottom: 12rpx;
+}
+
+.switch-label {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: rgba(232,234,255,0.85);
+  letter-spacing: 1rpx;
+}
+
+.custom-switch {
+  position: relative;
+  width: 100rpx;
+  height: 52rpx;
+  border-radius: 26rpx;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switch-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 26rpx;
+  background: rgba(255,255,255,0.1);
+  border: 2rpx solid rgba(255,255,255,0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 4rpx;
+  left: 4rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fff 0%, #e0e0e0 100%);
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.switch-icon {
+  font-size: 20rpx;
+  line-height: 1;
+}
+
+/* 开关开启状态 */
+.custom-switch.switch-on .switch-track {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: rgba(139,92,246,0.5);
+  box-shadow: 0 0 20rpx rgba(139,92,246,0.4);
+}
+
+.custom-switch.switch-on .switch-thumb {
+  transform: translateX(48rpx);
+  background: linear-gradient(145deg, #fff 0%, #f0f0f0 100%);
+  box-shadow: 0 2rpx 12rpx rgba(139,92,246,0.5);
+}
+
+/* 开关关闭状态 */
+.custom-switch.switch-off .switch-track {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.15);
+}
+
+.custom-switch.switch-off .switch-thumb {
+  transform: translateX(0);
+}
+
+/* 开关禁用状态 */
+.custom-switch.switch-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* 开关点击动画 */
+.custom-switch:active .switch-thumb {
+  transform: scale(0.92);
+}
+
+.custom-switch.switch-on:active .switch-thumb {
+  transform: translateX(48rpx) scale(0.92);
+}
+
+/* ========== 速度控制区域 ========== */
+.speed-control-section {
+  transition: all 0.3s ease;
+}
+
+.speed-control-section.speed-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.slider-container {
+  margin: 16rpx 0 8rpx;
+}
+
+.slider-label {
+  display: block;
+  font-size: 22rpx;
+  color: rgba(232,234,255,0.55);
+  margin-bottom: 8rpx;
+  font-weight: 500;
+}
+
+/* ========== 紧急停止按钮优化 ========== */
+.stop-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  padding: 20rpx;
+  border-radius: 16rpx;
+  font-size: 26rpx;
+  font-weight: 800;
+  letter-spacing: 3rpx;
+  transition: all 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+  margin-top: 16rpx;
+}
+
+.stop-trigger.stop-inactive {
+  background: linear-gradient(135deg, rgba(100,116,139,0.15), rgba(71,85,105,0.08));
+  border: 1rpx solid rgba(100,116,139,0.2);
+  color: rgba(148,163,184,0.6);
+  opacity: 0.6;
+}
+
+.stop-trigger.stop-active {
+  background: linear-gradient(135deg, rgba(239,68,68,0.2), rgba(220,38,38,0.12));
+  border: 1rpx solid rgba(239,68,68,0.32);
+  color: #fca5a5;
+  animation: stopPulse 2s ease-in-out infinite;
+}
+
+.stop-icon-wrapper {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 8rpx;
+  background: rgba(239,68,68,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stop-active .stop-icon-wrapper {
+  background: rgba(239,68,68,0.3);
+  animation: stopIconWrapperPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes stopIconWrapperPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+  50% { box-shadow: 0 0 12rpx 4rpx rgba(239,68,68,0.2); }
+}
+
+.stop-icon {
+  font-size: 22rpx;
+  color: #f87171;
+}
+
+.stop-text {
+  color: inherit;
+}
+
+/* ========== 统一控制行布局 ========== */
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 12rpx;
+}
+
+/* 左侧数值显示区域 */
+.value-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8rpx;
+  flex-shrink: 0;
+  width: 120rpx;
+}
+
+.value-ring {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(139,92,246,0.22), rgba(124,58,237,0.1));
+  border: 3rpx solid rgba(139,92,246,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16rpx rgba(139,92,246,0.15);
+}
+
+.motor-value-display .value-ring {
+  background: linear-gradient(135deg, rgba(139,92,246,0.22), rgba(124,58,237,0.1));
+  border-color: rgba(139,92,246,0.35);
+  box-shadow: 0 0 20rpx rgba(139,92,246,0.15);
+}
+
+.value-num {
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #c4b5fd;
+  line-height: 1;
+  text-shadow: 0 0 16rpx rgba(139,92,246,0.4);
+}
+
+.value-unit {
+  font-size: 18rpx;
+  font-weight: 700;
+  color: rgba(196,181,253,0.75);
+  margin-left: 2rpx;
+}
+
+.value-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.value-sub {
+  font-size: 18rpx;
+  color: rgba(196,181,253,0.7);
+  font-weight: 600;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  letter-spacing: 0.5rpx;
+}
+
+.value-status {
+  font-size: 18rpx;
+  font-weight: 700;
+  letter-spacing: 1rpx;
+  padding: 3rpx 10rpx;
+  border-radius: 10rpx;
+}
+
+.value-status.status-on {
+  color: #4ade80;
+  background: rgba(34,197,94,0.15);
+}
+
+.value-status.status-off {
+  color: #94a3b8;
+  background: rgba(100,116,139,0.15);
+}
+
+/* 右侧滑块区域 */
+.slider-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+  padding: 8rpx 0;
+}
+
+.slider-track-container {
+  position: relative;
+  padding: 8rpx 0;
+}
+
+.control-slider {
+  margin: 0;
+  width: 100%;
+}
+
+/* 滑块刻度标记 */
+.slider-marks {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 8rpx;
+  margin-top: 4rpx;
+}
+
+.mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+}
+
+.mark-line {
+  width: 2rpx;
+  height: 10rpx;
+  background: rgba(255,255,255,0.2);
+  border-radius: 1rpx;
+  transition: all 0.3s ease;
+}
+
+.mark-line.mark-active {
+  background: rgba(139,92,246,0.8);
+  box-shadow: 0 0 8rpx rgba(139,92,246,0.5);
+}
+
+.servo-marks .mark-line.mark-active {
+  background: rgba(245,158,11,0.8);
+  box-shadow: 0 0 8rpx rgba(245,158,11,0.5);
+}
+
+.mark-label {
+  font-size: 18rpx;
+  color: rgba(232,234,255,0.5);
+  font-weight: 500;
+}
+
+/* 旧的样式保留兼容 */
+.speed-display {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding: 22rpx 24rpx;
+  background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(124,58,237,0.05));
+  border-radius: 18rpx;
+  border: 1rpx solid rgba(139,92,246,0.15);
+  box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.05);
+}
+
+.speed-ring {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(139,92,246,0.22), rgba(124,58,237,0.1));
+  border: 3rpx solid rgba(139,92,246,0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 20rpx rgba(139,92,246,0.15);
+}
+
+.speed-num {
+  font-size: 40rpx;
+  font-weight: 900;
+  color: #c4b5fd;
+  line-height: 1;
+  text-shadow: 0 0 20rpx rgba(139,92,246,0.4);
+}
+
+.speed-pct {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: rgba(196,181,253,0.75);
+  margin-left: 3rpx;
+  align-self: flex-end;
+  margin-bottom: 8rpx;
+}
+
+.speed-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.speed-pwm {
+  font-size: 26rpx;
+  color: rgba(196,181,253,0.85);
+  font-weight: 700;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  letter-spacing: 1rpx;
+}
+
+.speed-status {
+  font-size: 22rpx;
+  color: rgba(196,181,253,0.55);
+  font-weight: 700;
+  letter-spacing: 1.5rpx;
+}
+
+.motor-slider,
+.servo-slider {
+  margin: 6rpx 0 2rpx;
+}
+
+.preset-row {
+  display: flex;
+  gap: 10rpx;
+}
+
+.preset-row-wide {
+  gap: 8rpx;
+}
+
+.preset-item {
+  flex: 1;
+  text-align: center;
+  padding: 12rpx 0;
+  border-radius: 12rpx;
+  font-size: 24rpx;
+  font-weight: 700;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  color: rgba(232,234,255,0.6);
+  border: 1rpx solid rgba(255,255,255,0.1);
+  transition: all 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  letter-spacing: 1rpx;
+  box-shadow: inset 0 1rpx 0 rgba(255,255,255,0.05);
+}
+
+.preset-item.preset-wider {
+  font-size: 22rpx;
+  padding: 12rpx 0;
+  letter-spacing: 0.5rpx;
+}
+
+.preset-item text {
+  color: inherit;
+}
+
+/* 亮色模式下的预设按钮样式 */
+.control-container.light .preset-item {
+  background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(250,248,255,0.95));
+  color: rgba(26,21,96,0.7);
+  border-color: rgba(99,102,241,0.2);
+  box-shadow: 0 2rpx 8rpx rgba(99,102,241,0.06), inset 0 1rpx 0 rgba(255,255,255,0.8);
+}
+
+.control-container.light .preset-item.preset-active {
+  background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.12)) !important;
+  color: #4f46e5 !important;
+  border-color: rgba(99,102,241,0.5) !important;
+  box-shadow:
+    0 0 24rpx rgba(99,102,241,0.15),
+    inset 0 1rpx 0 rgba(255,255,255,0.7);
+  font-weight: 800;
+}
+
+.preset-active {
+  background: linear-gradient(135deg, rgba(99,102,241,0.28), rgba(139,92,246,0.18)) !important;
+  color: #c7d2fe !important;
+  border-color: rgba(99,102,241,0.45) !important;
+  box-shadow:
+    0 0 24rpx rgba(99,102,241,0.2),
+    inset 0 1rpx 0 rgba(255,255,255,0.12);
+  font-weight: 800 !important;
+}
+
+.preset-tap {
+  transform: scale(0.94);
+  background: rgba(255,255,255,0.12);
+}
+
+.stop-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  padding: 16rpx;
+  border-radius: 14rpx;
+  background: linear-gradient(135deg, rgba(239,68,68,0.22), rgba(220,38,38,0.12));
+  border: 1.5rpx solid rgba(239,68,68,0.38);
+  font-size: 26rpx;
+  font-weight: 800;
+  color: #fca5a5;
+  letter-spacing: 3rpx;
+  transition: all 0.32s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 24rpx rgba(239,68,68,0.2), inset 0 1rpx 0 rgba(255,255,255,0.1);
+  margin-top: 10rpx;
+}
+
+.stop-trigger::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(239,68,68,0.15), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stop-trigger:active::before {
+  opacity: 1;
+}
+
+.stop-trigger[style*="opacity: 1"] {
+  animation: stopPulse 2s ease-in-out infinite;
+}
+
+@keyframes stopPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.25); }
+  50% { box-shadow: 0 0 20rpx 4rpx rgba(239,68,68,0.1); }
+}
+
+.stop-press {
+  transform: scale(0.95);
+  background: linear-gradient(135deg, rgba(239,68,68,0.32), rgba(220,38,38,0.2)) !important;
+  border-color: rgba(239,68,68,0.45) !important;
+}
+
+.stop-icon {
+  font-size: 26rpx;
+  color: #f87171;
+  animation: stopIconBlink 1s steps(2) infinite;
+}
+
+@keyframes stopIconBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.servo-visualizer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+  padding: 10rpx 0 12rpx;
+}
+
+.gauge-track {
+  width: 100rpx;
+  height: 50rpx;
+  border-radius: 50rpx 50rpx 0 0;
+  position: relative;
+  overflow: visible;
+  background: rgba(255,255,255,0.045);
+  border: 1rpx solid rgba(255,255,255,0.07);
+  border-bottom: none;
+  box-shadow: inset 0 2rpx 8rpx rgba(0,0,0,0.15);
+}
+
+/* 舵机仪表盘刻度 */
+.gauge-marks {
+  position: absolute;
+  inset: 0;
+  border-radius: 50rpx 50rpx 0 0;
+  overflow: hidden;
+}
+
+.gauge-mark {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 2rpx;
+  height: 42rpx;
+  margin-left: -1rpx;
+  transform-origin: bottom center;
+}
+
+.gauge-mark-line {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2rpx;
+  height: 10rpx;
+  margin-left: -1rpx;
+  background: rgba(255,255,255,0.25);
+  border-radius: 1rpx;
+  transition: all 0.3s ease;
+}
+
+.gauge-mark-line.mark-line-active {
+  background: rgba(245,158,11,0.9);
+  box-shadow: 0 0 6rpx rgba(245,158,11,0.6);
+}
+
+.gauge-mark-label {
+  position: absolute;
+  top: 12rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14rpx;
+  color: rgba(232,234,255,0.55);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.gauge-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 50rpx 50rpx 0 0;
+}
+
+.gauge-needle {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 3rpx;
+  height: 44rpx;
+  margin-left: -1.5rpx;
+  transform-origin: bottom center;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: linear-gradient(to top, #f59e0b, #fcd34d);
+  border-radius: 1.5rpx;
+}
+
+.needle-head {
+  position: absolute;
+  top: -3rpx;
+  left: 50%;
+  width: 8rpx;
+  height: 8rpx;
+  margin-left: -4rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fcd34d, #f59e0b);
+  box-shadow:
+    0 0 8rpx rgba(245,158,11,0.8),
+    0 0 16rpx rgba(245,158,11,0.4);
+}
+
+.gauge-center {
+  position: absolute;
+  bottom: -3rpx;
+  left: 50%;
+  width: 12rpx;
+  height: 12rpx;
+  margin-left: -6rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: 2rpx solid rgba(255,255,255,0.25);
+  box-shadow: 0 0 8rpx rgba(245,158,11,0.5);
+}
+
+.angle-display {
+  font-size: 32rpx;
+  font-weight: 900;
+  color: #fcd34d;
+  text-shadow: 0 0 16rpx rgba(245,158,11,0.4);
+  letter-spacing: 2rpx;
+  background: linear-gradient(135deg, #fcd34d 0%, #fbbf24 50%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  padding: 20rpx 28rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(10,11,30,0.85) 0%, rgba(10,11,30,0.95) 100%);
+  backdrop-filter: blur(30px);
+  border-top: 1rpx solid rgba(255,255,255,0.08);
+  box-shadow: 0 -4rpx 30rpx rgba(0,0,0,0.3);
+}
+
+.control-container.light .bottom-bar {
+  background: linear-gradient(180deg, rgba(250,248,255,0.92) 0%, rgba(250,248,255,0.98) 100%);
+  border-top-color: rgba(200,195,230,0.25);
+  box-shadow: 0 -4rpx 20rpx rgba(99,102,241,0.06);
+}
+
+.bar-section {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.bar-right {
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.bar-sep {
+  width: 1rpx;
+  height: 32rpx;
+  background: linear-gradient(180deg, transparent, rgba(255,255,255,0.1), transparent);
+  margin: 0 24rpx;
+}
+
+.bar-icon {
+  font-size: 28rpx;
+}
+
+.bar-text {
+  font-size: 24rpx;
+  color: rgba(232,234,255,0.52);
+  font-weight: 400;
+}
+
+.control-container.light .bar-text {
+  color: rgba(26,21,96,0.52);
+}
+
+.bar-highlight {
+  color: #a78bfa;
+  font-weight: 800;
+  font-size: 28rpx;
+  text-shadow: 0 0 10rpx rgba(167,139,250,0.3);
+}
+
+.bar-last {
+  font-size: 22rpx;
+  color: rgba(232,234,255,0.42);
+  max-width: 320rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.control-container.light .bar-last {
+  color: rgba(26,21,96,0.42);
+}
+
+/* 亮色模式下的电机开关样式 */
+.control-container.light .motor-main-switch {
+  background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(124,58,237,0.03));
+  border-color: rgba(139,92,246,0.12);
+}
+
+.control-container.light .switch-label {
+  color: rgba(26,21,96,0.8);
+}
+
+.control-container.light .custom-switch.switch-off .switch-track {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.12);
+}
+
+.control-container.light .custom-switch.switch-on .switch-track {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  border-color: rgba(139,92,246,0.4);
+  box-shadow: 0 0 16rpx rgba(139,92,246,0.3);
+}
+
+.control-container.light .slider-label {
+  color: rgba(26,21,96,0.55);
+}
+
+.control-container.light .speed-control-section.speed-disabled {
+  opacity: 0.35;
+}
+
+.control-container.light .stop-trigger.stop-inactive {
+  background: linear-gradient(135deg, rgba(100,116,139,0.1), rgba(71,85,105,0.05));
+  border-color: rgba(100,116,139,0.15);
+  color: rgba(148,163,184,0.5);
+}
+
+.control-container.light .stop-trigger.stop-active {
+  background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06));
+  border-color: rgba(239,68,68,0.25);
+  color: #ef4444;
+}
+
+.control-container.light .stop-active .stop-icon-wrapper {
+  background: rgba(239,68,68,0.2);
+}
+
+.control-container.light .stop-icon {
+  color: #ef4444;
+}
+
+/* 亮色模式下的频率选择器样式 */
+.control-container.light .freq-selector {
+  background: rgba(255,255,255,0.7);
+  border-color: rgba(99,102,241,0.12);
+}
+
+.control-container.light .freq-label {
+  color: rgba(26,21,96,0.7);
+}
+
+/* 亮色模式下的速度显示区域 */
+.control-container.light .speed-display {
+  background: linear-gradient(135deg, rgba(139,92,246,0.06), rgba(124,58,237,0.03));
+  border-color: rgba(139,92,246,0.15);
+}
+
+.control-container.light .speed-ring {
+  background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(124,58,237,0.05));
+  border-color: rgba(139,92,246,0.2);
+}
+
+.control-container.light .speed-num {
+  color: #7c3aed;
+}
+
+.control-container.light .speed-pct {
+  color: rgba(124,58,237,0.6);
+}
+
+.control-container.light .speed-pwm {
+  color: rgba(124,58,237,0.75);
+}
+
+.control-container.light .speed-status {
+  color: rgba(124,58,237,0.5);
+}
+
+/* 亮色模式下的蜂鸣器触发按钮 */
+.control-container.light .beep-trigger {
+  background: linear-gradient(135deg, rgba(6,182,212,0.12), rgba(8,145,178,0.06));
+  border-color: rgba(6,182,212,0.2);
+  color: #0891b2;
+}
+
+.control-container.light .beep-trigger.trigger-active {
+  background: linear-gradient(135deg, rgba(6,182,212,0.22), rgba(8,145,178,0.12));
+  border-color: rgba(6,182,212,0.35);
+}
+
+/* 亮色模式下的状态标签 */
+.control-container.light .pill-on {
+  background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.06));
+  color: #16a34a;
+  border-color: rgba(34,197,94,0.25);
+}
+
+.control-container.light .pill-off {
+  background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05));
+  color: #dc2626;
+  border-color: rgba(239,68,68,0.2);
+}
+
+/* 亮色模式下的操作按钮 */
+.control-container.light .chip-green {
+  background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.06));
+  color: #059669;
+  border-color: rgba(16,185,129,0.22);
+}
+
+.control-container.light .chip-red {
+  background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.06));
+  color: #dc2626;
+  border-color: rgba(239,68,68,0.22);
+}
+
+.control-container.light .chip-amber {
+  background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.06));
+  color: #d97706;
+  border-color: rgba(245,158,11,0.22);
+}
+
+/* 亮色模式下的紧急停止按钮 */
+.control-container.light .stop-trigger {
+  background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06));
+  border-color: rgba(239,68,68,0.25);
+  color: #dc2626;
+}
+
+.control-container.light .stop-icon {
+  color: #ef4444;
+}
+
+/* 亮色模式下的舵机仪表盘 */
+.control-container.light .gauge-track {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.08);
+}
+
+.control-container.light .gauge-mark-line {
+  background: rgba(0,0,0,0.15);
+}
+
+.control-container.light .gauge-mark-line.mark-line-active {
+  background: rgba(245,158,11,0.9);
+}
+
+.control-container.light .gauge-mark-label {
+  color: rgba(0,0,0,0.5);
+}
+
+.control-container.light .angle-display {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 50%, #fbbf24 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+}
+
+/* 亮色模式下的统一控制行 */
+.control-container.light .value-ring {
+  background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(124,58,237,0.05));
+  border-color: rgba(139,92,246,0.25);
+}
+
+.control-container.light .value-num {
+  color: #7c3aed;
+  text-shadow: none;
+}
+
+.control-container.light .value-unit {
+  color: rgba(124,58,237,0.65);
+}
+
+.control-container.light .value-sub {
+  color: rgba(124,58,237,0.7);
+}
+
+.control-container.light .mark-line {
+  background: rgba(0,0,0,0.15);
+}
+
+.control-container.light .mark-line.mark-active {
+  background: rgba(139,92,246,0.8);
+}
+
+.control-container.light .servo-marks .mark-line.mark-active {
+  background: rgba(245,158,11,0.8);
+}
+
+.control-container.light .mark-label {
+  color: rgba(26,21,96,0.5);
+}
+
+/* 亮色模式下的历史记录面板 */
+.control-container.light .history-panel {
+  background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(250,248,255,0.95) 100%);
+  border-color: rgba(200,195,230,0.25);
+}
+
+.control-container.light .history-label {
+  color: rgba(26,21,96,0.7);
+}
+
+.control-container.light .history-chevron {
+  color: rgba(26,21,96,0.4);
+}
+
+.control-container.light .entry-time {
+  color: rgba(26,21,96,0.35);
+}
+
+.control-container.light .entry-device {
+  color: rgba(26,21,96,0.65);
+}
+
+.control-container.light .entry-action {
+  color: rgba(26,21,96,0.5);
+}
+
+.control-container.light .history-entry {
+  border-top-color: rgba(0,0,0,0.04);
+}
+
+.history-panel {
+  position: relative;
+  z-index: 10;
+  margin: 20rpx 4rpx 0 4rpx;
+  border-radius: 16rpx;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 100%);
+  backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(255,255,255,0.06);
+  overflow: hidden;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.15);
+}
+
+/* 自动控制入口 */
+.auto-control-entry {
+  position: relative;
+  z-index: 10;
+  margin: 20rpx 4rpx 0 4rpx;
+  padding: 24rpx 28rpx;
+  border-radius: 16rpx;
+  background: linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.08) 100%);
+  backdrop-filter: blur(20px);
+  border: 1rpx solid rgba(59,130,246,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.15);
+  transition: all 0.3s ease;
+}
+
+.auto-control-entry:active {
+  transform: scale(0.98);
+  background: linear-gradient(135deg, rgba(59,130,246,0.2) 0%, rgba(37,99,235,0.12) 100%);
+}
+
+.entry-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.entry-icon {
+  font-size: 40rpx;
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(59,130,246,0.3), rgba(37,99,235,0.2));
+  border-radius: 16rpx;
+  border: 1rpx solid rgba(59,130,246,0.3);
+}
+
+.entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.entry-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: rgba(232,234,255,0.95);
+  letter-spacing: 0.5rpx;
+}
+
+.entry-desc {
+  font-size: 22rpx;
+  color: rgba(148,163,184,0.8);
+}
+
+.entry-arrow {
+  font-size: 32rpx;
+  color: rgba(59,130,246,0.8);
+  font-weight: 300;
+}
+
+/* 浅色模式 */
+.control-container.light .auto-control-entry {
+  background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(37,99,235,0.05) 100%);
+  border: 1rpx solid rgba(59,130,246,0.15);
+}
+
+.control-container.light .entry-icon {
+  background: linear-gradient(135deg, rgba(59,130,246,0.2), rgba(37,99,235,0.1));
+}
+
+.control-container.light .entry-title {
+  color: rgba(30,41,59,0.95);
+}
+
+.control-container.light .entry-desc {
+  color: rgba(100,116,139,0.8);
+}
+
+.history-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 20rpx;
+  cursor: pointer;
+}
+
+.history-toggle:active {
+  background: rgba(255,255,255,0.02);
+}
+
+.history-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.history-icon {
+  font-size: 26rpx;
+}
+
+.history-label {
+  font-size: 24rpx;
+  font-weight: 600;
+  color: rgba(232,234,255,0.72);
+  letter-spacing: 0.5rpx;
+}
+
+.history-count {
+  padding: 4rpx 12rpx;
+  border-radius: 12rpx;
+  background: linear-gradient(135deg, rgba(99,102,241,0.18), rgba(99,102,241,0.1));
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #a5b4fc;
+  border: 1rpx solid rgba(99,102,241,0.2);
+}
+
+.history-chevron {
+  font-size: 24rpx;
+  color: rgba(232,234,255,0.42);
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.chevron-up {
+  transform: rotate(180deg);
+}
+
+.history-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.body-open {
+  max-height: 360rpx;
+}
+
+.history-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14rpx 20rpx;
+  border-top: 1rpx solid rgba(255,255,255,0.04);
+  transition: background 0.2s ease;
+}
+
+.history-entry:active {
+  background: rgba(255,255,255,0.02);
+}
+
+.entry-main {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.entry-time {
+  font-size: 20rpx;
+  color: rgba(232,234,255,0.35);
+  font-family: 'SF Mono', 'Consolas', monospace;
+  flex-shrink: 0;
+  min-width: 76rpx;
+  max-width: 90rpx;
+  letter-spacing: 0.3rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.entry-device {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: rgba(232,234,255,0.65);
+  flex-shrink: 1;
+  min-width: 60rpx;
+  max-width: 100rpx;
+  letter-spacing: 0.3rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.entry-action {
+  font-size: 22rpx;
+  color: rgba(232,234,255,0.5);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  margin-left: 8rpx;
+}
+
+.entry-result {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.result-ok {
+  background: linear-gradient(135deg, rgba(34,197,94,0.15), rgba(34,197,94,0.08));
+  color: #4ade80;
+  border: 1rpx solid rgba(34,197,94,0.2);
+  box-shadow: 0 0 8rpx rgba(34,197,94,0.1);
+}
+
+.result-fail {
+  background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.08));
+  color: #f87171;
+  border: 1rpx solid rgba(239,68,68,0.18);
+}
+
+/* ========== 数值输入框优化样式 ========== */
+.input-section {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 12rpx 14rpx;
+  margin-top: 10rpx;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  border-radius: 14rpx;
+  border: 1rpx solid rgba(255,255,255,0.1);
+}
+
+.control-container.light .input-section {
+  background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(250,248,255,0.9));
+  border-color: rgba(99,102,241,0.15);
+}
+
+.input-label {
+  font-size: 22rpx;
+  font-weight: 600;
+  color: rgba(232,234,255,0.7);
+  letter-spacing: 1rpx;
+  flex-shrink: 0;
+}
+
+.control-container.light .input-label {
+  color: rgba(26,21,96,0.7);
+}
+
+.numeric-input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  position: relative;
+}
+
+.numeric-input {
+  flex: 1;
+  height: 52rpx;
+  padding: 0 16rpx;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #e8eaFF;
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.08));
+  border: 2rpx solid rgba(139,92,246,0.3);
+  border-radius: 12rpx;
+  text-align: center;
+  letter-spacing: 2rpx;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: inset 0 2rpx 6rpx rgba(0,0,0,0.15);
+}
+
+.control-container.light .numeric-input {
+  color: #4338ca;
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.04));
+  border-color: rgba(99,102,241,0.25);
+  box-shadow: inset 0 1rpx 3rpx rgba(0,0,0,0.06);
+}
+
+.numeric-input:focus {
+  border-color: #8b5cf6;
+  box-shadow:
+    inset 0 2rpx 6rpx rgba(0,0,0,0.15),
+    0 0 16rpx rgba(139,92,246,0.3),
+    0 0 32rpx rgba(139,92,246,0.15);
+  background: linear-gradient(135deg, rgba(99,102,241,0.22), rgba(139,92,246,0.12));
+}
+
+.input-unit {
+  font-size: 22rpx;
+  font-weight: 700;
+  color: rgba(196,181,253,0.85);
+  flex-shrink: 0;
+  letter-spacing: 1rpx;
+}
+
+.control-container.light .input-unit {
+  color: rgba(124,58,237,0.75);
+}
+
+.input-submit-btn {
+  width: 60rpx;
+  height: 52rpx;
+  border-radius: 12rpx;
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  transition: all 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow:
+    0 4rpx 12rpx rgba(139,92,246,0.35),
+    inset 0 1rpx 0 rgba(255,255,255,0.2);
+  letter-spacing: 0;
+}
+
+.input-submit-btn:active {
+  transform: scale(0.94);
+  box-shadow:
+    0 2rpx 6rpx rgba(139,92,246,0.35),
+    inset 0 1rpx 0 rgba(255,255,255,0.2);
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+}
+
+/* 舵机输入框特殊颜色 */
+.servo-input-section .numeric-input {
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(217,119,6,0.08));
+  border-color: rgba(245,158,11,0.3);
+  color: #fcd34d;
+}
+
+.control-container.light .servo-input-section .numeric-input {
+  color: #b45309;
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.04));
+  border-color: rgba(245,158,11,0.25);
+}
+
+.servo-input-section .numeric-input:focus {
+  border-color: #f59e0b;
+  box-shadow:
+    inset 0 2rpx 6rpx rgba(0,0,0,0.15),
+    0 0 20rpx rgba(245,158,11,0.3),
+    0 0 40rpx rgba(245,158,11,0.15);
+  background: linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.12));
+}
+
+.servo-input-section .input-unit {
+  color: rgba(251,191,36,0.85);
+}
+
+.control-container.light .servo-input-section .input-unit {
+  color: rgba(217,119,6,0.75);
+}
+
+.servo-input-section .input-submit-btn {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow:
+    0 4rpx 16rpx rgba(245,158,11,0.35),
+    inset 0 1rpx 0 rgba(255,255,255,0.2);
+}
+
+.servo-input-section .input-submit-btn:active {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  box-shadow:
+    0 2rpx 8rpx rgba(245,158,11,0.35),
+    inset 0 1rpx 0 rgba(255,255,255,0.2);
+}
+
+/* ========== 滑块交互优化 ========== */
+.slider-track-container {
+  position: relative;
+  padding: 16rpx 0;
+  border-radius: 12rpx;
+  background: rgba(255,255,255,0.03);
+  border: 1rpx solid rgba(255,255,255,0.06);
+  transition: all 0.3s ease;
+}
+
+.slider-track-container:active {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.control-container.light .slider-track-container {
+  background: rgba(0,0,0,0.03);
+  border-color: rgba(0,0,0,0.06);
+}
+
+.control-container.light .slider-track-container:active {
+  background: rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.1);
+}
+
+/* 滑块拖动时的视觉反馈 */
+.control-slider {
+  margin: 0;
+  width: 100%;
+  transition: opacity 0.2s ease;
+}
+
+/* 卡片入场动画增强 */
+.device-card {
+  animation: cardSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+}
+
+.device-card:nth-child(1) { animation-delay: 0.05s; }
+.device-card:nth-child(2) { animation-delay: 0.12s; }
+.device-card:nth-child(3) { animation-delay: 0.19s; }
+.device-card:nth-child(4) { animation-delay: 0.26s; }
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30rpx) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 状态变化动画 */
+.device-card.active {
+  animation: cardActivePulse 0.4s ease-out;
+}
+
+@keyframes cardActivePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}

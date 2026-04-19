@@ -1,0 +1,492 @@
+/* pages/auto-control/auto-control.wxss */
+
+.container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+  padding: 20rpx;
+  padding-bottom: 40rpx;
+}
+
+/* 页面标题 */
+.page-header {
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.header-icon {
+  font-size: 64rpx;
+  margin-bottom: 16rpx;
+}
+
+.header-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 8rpx;
+}
+
+.header-subtitle {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+/* 状态卡片 */
+.status-card {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1rpx solid rgba(148, 163, 184, 0.15);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 24rpx;
+  backdrop-filter: blur(10px);
+}
+
+.status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.status-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.status-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-text {
+  font-size: 24rpx;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.status-hint {
+  font-size: 22rpx;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.15);
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+}
+
+/* 规则区域 */
+.rules-section {
+  margin-bottom: 24rpx;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+  padding: 0 8rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.section-actions {
+  display: flex;
+  gap: 16rpx;
+}
+
+.action-btn {
+  padding: 12rpx 24rpx;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1rpx solid rgba(59, 130, 246, 0.3);
+  border-radius: 24rpx;
+  font-size: 24rpx;
+  color: #60a5fa;
+}
+
+.action-btn.primary {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(37, 99, 235, 0.7));
+  color: #fff;
+  border: none;
+}
+
+/* 规则卡片 */
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.rule-card {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1rpx solid rgba(148, 163, 184, 0.15);
+  border-radius: 20rpx;
+  padding: 24rpx;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.rule-card.disabled {
+  opacity: 0.6;
+}
+
+.rule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+  padding-bottom: 16rpx;
+  border-bottom: 1rpx solid rgba(148, 163, 184, 0.1);
+}
+
+.rule-info {
+  flex: 1;
+}
+
+.rule-name {
+  display: block;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #f8fafc;
+  margin-bottom: 4rpx;
+}
+
+.rule-id {
+  font-size: 20rpx;
+  color: rgba(148, 163, 184, 0.7);
+}
+
+/* 条件区域 */
+.rule-condition {
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 16rpx;
+  padding: 20rpx;
+  margin-bottom: 16rpx;
+}
+
+.condition-item {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-wrap: wrap;
+}
+
+.condition-label, .action-label {
+  font-size: 22rpx;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.condition-sensor, .condition-op, .condition-value,
+.action-device, .action-param {
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  font-weight: 500;
+}
+
+.condition-sensor {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+
+.condition-op {
+  background: rgba(139, 92, 246, 0.2);
+  color: #a78bfa;
+}
+
+.condition-value {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+.condition-arrow {
+  text-align: center;
+  font-size: 32rpx;
+  color: rgba(148, 163, 184, 0.5);
+  padding: 12rpx 0;
+}
+
+.condition-action {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.action-device {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.action-param {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+/* 规则底部 */
+.rule-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rule-status {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  font-size: 22rpx;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.rule-status.triggered {
+  color: #ef4444;
+}
+
+.rule-status .status-dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.rule-status.triggered .status-dot {
+  background: #ef4444;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.rule-actions {
+  display: flex;
+  gap: 12rpx;
+}
+
+.rule-btn {
+  padding: 10rpx 20rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+}
+
+.rule-btn.test {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+
+.rule-btn.edit {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.rule-btn.delete {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 80rpx 40rpx;
+}
+
+.empty-icon {
+  display: block;
+  font-size: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.empty-text {
+  display: block;
+  font-size: 28rpx;
+  color: rgba(148, 163, 184, 0.9);
+  margin-bottom: 8rpx;
+}
+
+.empty-hint {
+  display: block;
+  font-size: 22rpx;
+  color: rgba(148, 163, 184, 0.6);
+}
+
+/* 弹窗 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.modal.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-content {
+  width: 100%;
+  max-height: 85vh;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 32rpx 32rpx 0 0;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.modal.show .modal-content {
+  transform: translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32rpx;
+  border-bottom: 1rpx solid rgba(148, 163, 184, 0.1);
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.modal-close {
+  font-size: 48rpx;
+  color: rgba(148, 163, 184, 0.8);
+  line-height: 1;
+}
+
+.modal-body {
+  flex: 1;
+  padding: 32rpx;
+  max-height: 60vh;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 20rpx;
+  padding: 24rpx 32rpx;
+  padding-bottom: calc(24rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid rgba(148, 163, 184, 0.1);
+}
+
+/* 表单 */
+.form-group {
+  margin-bottom: 28rpx;
+}
+
+.form-row {
+  display: flex;
+  gap: 20rpx;
+}
+
+.form-group.half {
+  flex: 1;
+}
+
+.form-label {
+  display: block;
+  font-size: 24rpx;
+  color: rgba(148, 163, 184, 0.9);
+  margin-bottom: 12rpx;
+}
+
+.form-input {
+  width: 100%;
+  height: 80rpx;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1rpx solid rgba(148, 163, 184, 0.2);
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #f8fafc;
+  box-sizing: border-box;
+}
+
+.picker-value {
+  height: 80rpx;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1rpx solid rgba(148, 163, 184, 0.2);
+  border-radius: 12rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #f8fafc;
+  display: flex;
+  align-items: center;
+}
+
+.form-hint {
+  display: block;
+  font-size: 20rpx;
+  color: rgba(148, 163, 184, 0.6);
+  margin-top: 8rpx;
+}
+
+/* 按钮 */
+.btn {
+  flex: 1;
+  height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.btn-cancel {
+  background: rgba(148, 163, 184, 0.15);
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.btn-confirm {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(37, 99, 235, 0.8));
+  color: #fff;
+}
+
+/* 帮助区域 */
+.help-section {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1rpx solid rgba(148, 163, 184, 0.1);
+  border-radius: 16rpx;
+  padding: 24rpx;
+}
+
+.help-title {
+  display: block;
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #f8fafc;
+  margin-bottom: 16rpx;
+}
+
+.help-item {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 12rpx;
+}
+
+.help-dot {
+  font-size: 24rpx;
+  color: #60a5fa;
+}
+
+.help-text {
+  flex: 1;
+  font-size: 22rpx;
+  color: rgba(148, 163, 184, 0.8);
+  line-height: 1.6;
+}

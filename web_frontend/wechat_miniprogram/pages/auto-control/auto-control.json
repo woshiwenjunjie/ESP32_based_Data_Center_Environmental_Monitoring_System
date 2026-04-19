@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "超限自动控制",
+  "navigationBarBackgroundColor": "#0f172a",
+  "navigationBarTextStyle": "white",
+  "backgroundColor": "#0f172a",
+  "enablePullDownRefresh": true,
+  "usingComponents": {}
+}

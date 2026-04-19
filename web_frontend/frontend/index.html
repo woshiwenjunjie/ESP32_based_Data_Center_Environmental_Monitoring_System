@@ -1,0 +1,2289 @@
+<!--
+  ============================================================
+   ESP32-CAM 智能环境监测站 - Web前端控制面板
+  ============================================================
+   
+   功能模块：
+     📊 实时数据可视化 - Chart.js动态图表（温度/湿度/气体/水位）
+     📹 MJPEG视频流 - 实时摄像头画面（img标签流式加载）
+     📸 JPEG拍照捕获 - 高清照片拍摄与预览
+     🤖 AI视觉识别 - 对接多平台大模型（OpenAI/通义千问/Kimi/DeepSeek/豆包）
+     🧪 LLM验证测试 - 独立测试面板，验证AI服务连通性
+     ⚙️ 配置管理 - ESP32地址、分辨率、质量等参数设置
+   
+   技术栈：
+     - HTML5 + CSS3 (原生，无框架依赖)
+     - Chart.js 4.x (数据可视化)
+     - Font Awesome 6.x (图标库)
+     - Google Inter字体
+     - Fetch API (HTTP通信)
+   
+   浏览器兼容：Chrome 90+ / Firefox 88+ / Safari 14+ / Edge 90+
+   
+   作者: 现代交换技术实验项目组
+   版本: v3.0 (PSRAM优化版)
+  ============================================================
+-->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 环境监测站</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Chart.js 用于数据可视化 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #1e293b;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .dashboard {
+            max-width: 1600px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            padding: 28px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+        h1 i {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.5rem;
+        }
+        .header-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+        .config-btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .config-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+        /* 配置弹窗 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-content h3 {
+            margin-bottom: 20px;
+            color: #0f172a;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            margin-bottom: 12px;
+            transition: border-color 0.3s;
+        }
+        .modal-content input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .modal-actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .modal-actions .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .modal-actions .btn-secondary {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 28px;
+        }
+        /* 摄像头区域优化 */
+        .camera-section {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 3px solid #e2e8f0;
+        }
+        .camera-section img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .camera-label {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: pulse 2s infinite;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .camera-label::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .camera-status {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            background: rgba(0,0,0,0.6);
+            color: #4ade80;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
+        /* 视频控制按钮 */
+        .video-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            justify-content: center;
+        }
+        .video-controls button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .video-controls button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        .video-controls button:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+        /* 拍照区域 - 位于视频下方 */
+        .photo-section {
+            background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 16px;
+            border: 2px solid #e2e8f0;
+        }
+        .photo-section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            color: #0f172a;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .photo-section-header i {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .photo-display-area {
+            background: #0f172a;
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 16 / 9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin-bottom: 16px;
+            border: 2px dashed #cbd5e1;
+        }
+        .photo-display-area.has-image {
+            border: 2px solid #10b981;
+        }
+        .photo-display-area img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+        .photo-display-area img.show {
+            display: block;
+        }
+        .photo-placeholder {
+            color: #64748b;
+            font-size: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .photo-placeholder i {
+            font-size: 2rem;
+            color: #94a3b8;
+        }
+        .photo-placeholder.hidden {
+            display: none;
+        }
+        .photo-timestamp {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            display: none;
+        }
+        .photo-timestamp.show {
+            display: block;
+        }
+        .photo-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .photo-btn {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        }
+        .photo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        }
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .photo-btn:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .photo-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .photo-btn.secondary {
+            background: #64748b;
+        }
+        .photo-btn.secondary:hover {
+            background: #475569;
+            box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+        }
+        /* 传感器区域 */
+        .sensors-section { display: flex; flex-direction: column; gap: 20px; }
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+        }
+        .sensor-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 22px;
+            padding: 22px;
+            box-shadow: 0 2px 12px rgba(102, 126, 234, 0.06), 0 1px 3px rgba(0,0,0,0.04);
+            border: 1.5px solid rgba(226, 232, 240, 0.7);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .sensor-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 35px -10px rgba(102, 126, 234, 0.18), 0 4px 12px rgba(0,0,0,0.08);
+            border-color: #c7d2fe;
+        }
+        .sensor-card.active {
+            border: 2px solid #667eea;
+            background: linear-gradient(145deg, #f0f4ff 0%, #e8ecff 100%);
+            box-shadow: 0 6px 24px rgba(102, 126, 234, 0.15), 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .sensor-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .sensor-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+        .sensor-info { flex: 1; }
+        .sensor-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .sensor-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.2;
+            letter-spacing: -0.5px;
+        }
+        .sensor-unit {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #94a3b8;
+            margin-left: 4px;
+        }
+        .sensor-footer {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sensor-trend {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .trend-up { color: #ef4444; }
+        .trend-down { color: #10b981; }
+        .trend-stable { color: #64748b; }
+        
+        /* 图表区域 */
+        .chart-section {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.08), 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            margin-top: 20px;
+        }
+        .chart-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .chart-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chart-title i {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.1rem;
+        }
+        .chart-controls {
+            display: flex;
+            gap: 8px;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 14px;
+        }
+        .chart-btn {
+            padding: 7px 16px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            color: #64748b;
+        }
+        .chart-btn:hover {
+            color: #334155;
+        }
+        .chart-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.35);
+        }
+        .chart-container {
+            position: relative;
+            height: 280px;
+            border-radius: 16px;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(248,250,252,0.5) 0%, rgba(255,255,255,0.8) 100%);
+        }
+        .chart-legend {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 6px 14px;
+            border-radius: 20px;
+            transition: all 0.25s ease;
+        }
+        .legend-item:hover {
+            background: #f1f5f9;
+        }
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            box-shadow: 0 0 6px currentColor;
+        }
+        .legend-text {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: #475569;
+        }
+        .legend-item.disabled {
+            opacity: 0.35;
+        }
+        
+        /* AI识别区域  */
+        .ai-card {
+            background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 24px;
+            padding: 24px;
+            border: 2px solid #e2e8f0;
+        }
+        /* 大模型验证测试区域 */
+        .ai-test-card {
+            background: linear-gradient(145deg, #fefce8 0%, #fef9c3 100%);
+            border-radius: 24px;
+            padding: 24px;
+            margin-top: 20px;
+            border: 2px solid #fbbf24;
+            box-shadow: 0 4px 16px rgba(251, 191, 36, 0.15);
+        }
+        .ai-test-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 18px;
+        }
+        .ai-test-header i {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.1rem;
+        }
+        .ai-test-header h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #78350f;
+        }
+        .ai-test-config {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .ai-test-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .ai-test-input-group label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #92400e;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ai-test-input-group input,
+        .ai-test-input-group select,
+        .ai-test-input-group textarea {
+            padding: 10px 14px;
+            background: white;
+            border: 1.5px solid #fcd34d;
+            border-radius: 10px;
+            font-size: 0.88rem;
+            transition: all 0.2s;
+        }
+        .ai-test-input-group input:focus,
+        .ai-test-input-group select:focus,
+        .ai-test-input-group textarea:focus {
+            outline: none;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+        }
+        .ai-test-actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .ai-test-btn {
+            flex: 1;
+            padding: 11px 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .ai-test-btn.primary {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+        }
+        .ai-test-btn.primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.45);
+        }
+        .ai-test-btn.secondary {
+            background: white;
+            color: #92400e;
+            border: 1.5px solid #fcd34d;
+        }
+        .ai-test-btn.secondary:hover {
+            background: #fffbeb;
+        }
+        .ai-test-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .ai-test-result {
+            background: white;
+            border-radius: 14px;
+            padding: 18px;
+            min-height: 100px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1.5px solid #fcd34d;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.82rem;
+            line-height: 1.7;
+            color: #451a03;
+        }
+        .ai-test-result.empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #a16207;
+            font-style: italic;
+            font-family: inherit;
+        }
+        .ai-test-result.success {
+            border-color: #22c55e;
+            background: #f0fdf4;
+        }
+        .ai-test-result.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        .ai-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            color: #0f172a;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .ai-header i {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* AI识别中的照片预览（小尺寸，固定显示） */
+        .ai-photo-preview {
+            width: 100%;
+            max-height: 150px;
+            object-fit: contain;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            background: #0f172a;
+            display: none;
+            border: 2px solid #667eea;
+        }
+        .ai-photo-preview.show {
+            display: block;
+        }
+        .ai-photo-info {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: #e0e7ff;
+            border-radius: 8px;
+        }
+        .ai-photo-info.show {
+            display: flex;
+        }
+        .ai-photo-info i {
+            color: #667eea;
+        }
+        /* 输入框和按钮 */
+        .ai-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .ai-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e2e8f0;
+            border-radius: 24px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+            background: white;
+        }
+        .ai-mode-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+        }
+        .ai-mode-selector label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .ai-mode-options {
+            display: flex;
+            gap: 6px;
+            flex: 1;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            background: #f8fafc;
+            color: #64748b;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        .mode-btn:hover {
+            border-color: #cbd5e1;
+            background: #f1f5f9;
+        }
+        .mode-btn.active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea20, #764ba220);
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.15);
+        }
+        .mode-btn.active[data-mode="yolo"] {
+            border-color: #f59e0b;
+            background: linear-gradient(135deg, #f59e0b20, #ef444420);
+            color: #f59e0b;
+            box-shadow: 0 2px 8px rgba(245,158,11,0.15);
+        }
+        .mode-btn.active[data-mode="local"] {
+            border-color: #10b981;
+            background: linear-gradient(135deg, #10b98120, #05966920);
+            color: #10b981;
+            box-shadow: 0 2px 8px rgba(16,185,129,0.15);
+        }
+        .ai-input:focus {
+            border-color: #667eea;
+        }
+        .ai-send-btn {
+            padding: 14px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .ai-send-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        .ai-send-btn:active {
+            transform: translateY(0);
+        }
+        .ai-send-btn.loading {
+            background: #cbd5e1;
+            pointer-events: none;
+        }
+        .ai-send-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        /* AI结果显示区域 */
+        .ai-result-box {
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            min-height: 100px;
+            border: 2px solid #e2e8f0;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #334155;
+        }
+        .ai-result-box.empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-style: italic;
+        }
+        .ai-result-box.loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            color: #64748b;
+        }
+        .ai-result-box.error {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #dc2626;
+        }
+        /* 底部状态栏 */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .last-updated {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        .last-updated i { color: #667eea; }
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.error { background: #ef4444; }
+
+        /* 加载动画 */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 响应式 */
+        @media (max-width: 1200px) {
+            .grid-container { grid-template-columns: 1fr; }
+            .sensor-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (max-width: 968px) {
+            .camera-section { aspect-ratio: 16/9; max-height: 400px; }
+            .sensor-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .sensor-grid { grid-template-columns: 1fr; }
+            .ai-input-group { flex-direction: column; }
+            .photo-actions { flex-direction: column; }
+            body { padding: 12px; }
+            .dashboard { padding: 20px; border-radius: 24px; }
+            .chart-container { height: 200px; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <h1>
+        <i class="fas fa-microchip"></i> ESP32 环境监测站
+        <div class="header-actions">
+            <button class="config-btn" onclick="showConfigModal()">
+                <i class="fas fa-cog"></i> 配置
+            </button>
+        </div>
+    </h1>
+    <div class="grid-container">
+        <!-- 左侧：视频、拍照和图表区域 -->
+        <div class="left-section">
+            <!-- 实时视频区域 -->
+            <div class="camera-section">
+                <img alt="实时视频流" id="camera-feed" onerror="handleStreamError()">
+                <span class="camera-label"><i class="fas fa-video"></i> 实时画面</span>
+                <span class="camera-status" id="stream-status">● LIVE</span>
+            </div>
+            <!-- 视频控制按钮 -->
+            <div class="video-controls">
+                <button id="pause-video" onclick="pauseVideo()" disabled><i class="fas fa-pause"></i> 暂停</button>
+                <button id="start-video" onclick="startVideo()" disabled><i class="fas fa-play"></i> 开始</button>
+            </div>
+
+            <!-- 拍照区域 -->
+            <div class="photo-section">
+                <div class="photo-section-header">
+                    <i class="fas fa-camera"></i> 照片拍摄
+                </div>
+                <div class="photo-display-area" id="photo-display-area">
+                    <div class="photo-placeholder" id="photo-placeholder">
+                        <i class="fas fa-image"></i>
+                        <span>点击拍照按钮捕获画面</span>
+                    </div>
+                    <img id="captured-photo" alt="拍摄的照片">
+                    <span class="photo-timestamp" id="photo-timestamp"></span>
+                </div>
+                <div class="photo-actions">
+                    <button class="photo-btn" onclick="takePhoto()" id="photo-btn">
+                        <i class="fas fa-camera"></i> 拍照
+                    </button>
+                    <button class="photo-btn secondary" onclick="useForAI()" id="use-for-ai-btn" disabled>
+                        <i class="fas fa-brain"></i> 用于AI识别
+                    </button>
+                    <button class="photo-btn secondary" onclick="clearPhoto()" id="clear-photo-btn" disabled>
+                        <i class="fas fa-trash"></i> 清除
+                    </button>
+                </div>
+            </div>
+
+            <!-- 传感器数据图表 -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <div class="chart-title">
+                        <i class="fas fa-chart-line"></i>
+                        <span id="chart-title-text">传感器数据趋势</span>
+                    </div>
+                    <div class="chart-controls">
+                        <button class="chart-btn active" onclick="setChartTimeRange(20)" id="btn-20">20点</button>
+                        <button class="chart-btn" onclick="setChartTimeRange(50)" id="btn-50">50点</button>
+                        <button class="chart-btn" onclick="setChartTimeRange(100)" id="btn-100">100点</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="sensorChart"></canvas>
+                </div>
+                <div class="chart-legend" id="chart-legend">
+                    <div class="legend-item" onclick="toggleDataset(0)">
+                        <div class="legend-color" style="background: #ef4444;"></div>
+                        <span>温度 (°C)</span>
+                    </div>
+                    <div class="legend-item" onclick="toggleDataset(1)">
+                        <div class="legend-color" style="background: #3b82f6;"></div>
+                        <span>湿度 (%RH)</span>
+                    </div>
+                    <div class="legend-item" onclick="toggleDataset(2)">
+                        <div class="legend-color" style="background: #f59e0b;"></div>
+                        <span>MQ-2 (ppm)</span>
+                    </div>
+                    <div class="legend-item" onclick="toggleDataset(3)">
+                        <div class="legend-color" style="background: #10b981;"></div>
+                        <span>水位 (cm)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：传感器卡片和AI区域 -->
+        <div class="sensors-section">
+            <div class="sensor-grid">
+                <!-- 温度 -->
+                <div class="sensor-card" onclick="highlightSensor('temp')" id="card-temp">
+                    <div class="sensor-header">
+                        <div class="sensor-icon" style="background:linear-gradient(135deg,#ffe4e6 0%,#fecdd3 100%);color:#e11d48;">
+                            <i class="fas fa-temperature-high"></i>
+                        </div>
+                        <div class="sensor-info">
+                            <div class="sensor-name">温度</div>
+                            <div class="sensor-value"><span id="temp-value">--</span><span class="sensor-unit">°C</span></div>
+                        </div>
+                    </div>
+                    <div class="sensor-footer">
+                        <i class="fas fa-thermometer-half"></i> 环境温度
+                        <span class="sensor-trend" id="temp-trend"></span>
+                    </div>
+                </div>
+                <!-- 湿度 -->
+                <div class="sensor-card" onclick="highlightSensor('humidity')" id="card-humidity">
+                    <div class="sensor-header">
+                        <div class="sensor-icon" style="background:linear-gradient(135deg,#e0f2fe 0%,#bae6fd 100%);color:#0284c7;">
+                            <i class="fas fa-tint"></i>
+                        </div>
+                        <div class="sensor-info">
+                            <div class="sensor-name">湿度</div>
+                            <div class="sensor-value"><span id="hum-value">--</span><span class="sensor-unit">%RH</span></div>
+                        </div>
+                    </div>
+                    <div class="sensor-footer">
+                        <i class="fas fa-water"></i> 相对湿度
+                        <span class="sensor-trend" id="hum-trend"></span>
+                    </div>
+                </div>
+                <!-- MQ2 -->
+                <div class="sensor-card" onclick="highlightSensor('mq2')" id="card-mq2">
+                    <div class="sensor-header">
+                        <div class="sensor-icon" style="background:linear-gradient(135deg,#fef9c3 0%,#fde047 100%);color:#a16207;">
+                            <i class="fas fa-wind"></i>
+                        </div>
+                        <div class="sensor-info">
+                            <div class="sensor-name">MQ-2</div>
+                            <div class="sensor-value"><span id="mq2-value">--</span><span class="sensor-unit">ppm</span></div>
+                        </div>
+                    </div>
+                    <div class="sensor-footer">
+                        <i class="fas fa-smog"></i> 可燃气体/烟雾
+                        <span class="sensor-trend" id="mq2-trend"></span>
+                    </div>
+                </div>
+                <!-- 水位 -->
+                <div class="sensor-card" onclick="highlightSensor('water')" id="card-water">
+                    <div class="sensor-header">
+                        <div class="sensor-icon" style="background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);color:#2563eb;">
+                            <i class="fas fa-water"></i>
+                        </div>
+                        <div class="sensor-info">
+                            <div class="sensor-name">水位</div>
+                            <div class="sensor-value"><span id="water-value">--</span><span class="sensor-unit">cm</span></div>
+                        </div>
+                    </div>
+                    <div class="sensor-footer">
+                        <i class="fas fa-arrow-up"></i> 距离传感器
+                        <span class="sensor-trend" id="water-trend"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI识别区域 -->
+            <div class="ai-card">
+                <div class="ai-header">
+                    <i class="fas fa-robot"></i> AI 视觉识别
+                </div>
+                <img id="ai-photo-preview" class="ai-photo-preview" alt="AI识别用的照片">
+                <div class="ai-photo-info" id="ai-photo-info">
+                    <i class="fas fa-lock"></i>
+                    <span>照片已锁定，正在分析中...</span>
+                </div>
+                <div class="ai-mode-selector" id="ai-mode-selector">
+                    <label>识别模式:</label>
+                    <div class="ai-mode-options">
+                        <button class="mode-btn active" data-mode="llm" onclick="selectAIMode('llm')">
+                            <i class="fas fa-cloud"></i> 云端LLM
+                        </button>
+                        <button class="mode-btn" data-mode="yolo" onclick="selectAIMode('yolo')">
+                            <i class="fas fa-bullseye"></i> YOLO检测
+                        </button>
+                        <button class="mode-btn" data-mode="local" onclick="selectAIMode('local')">
+                            <i class="fas fa-microchip"></i> 本地分析
+                        </button>
+                    </div>
+                </div>
+                <div class="ai-input-group">
+                    <input type="text" id="ai-question" class="ai-input" placeholder="输入你的问题，例如"图片里有什么？"" value="描述图片">
+                    <button class="ai-send-btn" onclick="askAI()" id="ai-send-btn">
+                        <i class="fas fa-paper-plane"></i> 识别
+                    </button>
+                </div>
+                <div class="ai-result-box empty" id="ai-result">
+                    <span><i class="fas fa-hand-pointer" style="margin-right:8px;"></i>点击"用于AI识别"按钮或输入问题开始分析</span>
+                </div>
+            </div>
+
+            <!-- 大模型验证测试 -->
+            <div class="ai-test-card">
+                <div class="ai-test-header">
+                    <i class="fas fa-flask"></i>
+                    <h3>大模型 (LLM) 验证测试</h3>
+                </div>
+                <div class="ai-test-config">
+                    <div class="ai-test-input-group">
+                        <label>API 地址</label>
+                        <input type="text" id="test-ai-url" placeholder="https://api.openai.com/v1/chat/completions" value="">
+                    </div>
+                    <div class="ai-test-input-group">
+                        <label>API Key</label>
+                        <input type="password" id="test-ai-key" placeholder="sk-..." value="">
+                    </div>
+                    <div class="ai-test-input-group">
+                        <label>模型 / 服务商</label>
+                        <select id="test-ai-model" onchange="onModelChange()">
+                            <optgroup label="OpenAI">
+                                <option value="gpt-4o-mini">GPT-4o Mini (推荐)</option>
+                                <option value="gpt-4o">GPT-4o</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            </optgroup>
+                            <optgroup label="国内主流模型">
+                                <option value="qwen-turbo">通义千问 Qwen-Turbo</option>
+                                <option value="qwen-plus">通义千问 Qwen-Plus</option>
+                                <option value="qwen-max">通义千问 Qwen-Max</option>
+                                <option value="kimi">Kimi (月之暗面)</option>
+                                <option value="deepseek-chat">DeepSeek Chat</option>
+                                <option value="deepseek-reasoner">DeepSeek Reasoner</option>
+                                <option value="doubao-pro">豆包 Pro (火山引擎)</option>
+                                <option value="doubao-lite">豆包 Lite (火山引擎)</option>
+                            </optgroup>
+                            <optgroup label="其他">
+                                <option value="custom">自定义...</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="ai-test-input-group">
+                        <label>超时时间 (秒)</label>
+                        <input type="number" id="test-ai-timeout" placeholder="30" value="30" min="5" max="120">
+                    </div>
+                    <div class="ai-test-input-group" style="grid-column: 1 / -1;">
+                        <label>测试问题</label>
+                        <textarea id="test-ai-question" rows="2" placeholder="输入测试问题...">你好，请用一句话介绍你自己。</textarea>
+                    </div>
+                </div>
+                <div class="ai-test-actions">
+                    <button class="ai-test-btn primary" onclick="runAITest()" id="btn-ai-test">
+                        <i class="fas fa-play"></i> 运行测试
+                    </button>
+                    <button class="ai-test-btn secondary" onclick="saveAIConfig()">
+                        <i class="fas fa-save"></i> 保存配置
+                    </button>
+                    <button class="ai-test-btn secondary" onclick="testAIConfigToESP32()">
+                        <i class="fas fa-microchip"></i> 同步到ESP32
+                    </button>
+                </div>
+                <div class="ai-test-result empty" id="ai-test-result">
+                    <span><i class="fas fa-info-circle" style="margin-right:8px;"></i>配置API地址和Key后点击"运行测试"</span>
+                </div>
+            </div>
+
+            <!-- 状态栏 -->
+            <div class="status-bar">
+                <div class="last-updated">
+                    <i class="far fa-clock"></i>
+                    <span id="update-time">连接中...</span>
+                </div>
+                <div class="connection-status">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">在线</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==================== 全局变量 ====================
+    window.videoStreamStarted = false;
+    window.videoPaused = false;
+    let videoStartAttempted = false;
+    
+    // 照片缓存系统
+    let cachedPhotoData = null;
+    let cachedPhotoBlob = null;
+    let isPhotoLocked = false;
+    let lastCaptureTime = null;
+
+    // 隐藏 canvas 用于捕获最后一帧
+    const captureCanvas = document.createElement('canvas');
+    const canvasCtx = captureCanvas.getContext('2d');
+    let lastFrameData = null;
+
+    // ESP32配置（从localStorage读取或默认值）
+    function getESP32Config() {
+        const saved = localStorage.getItem('esp32_config');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                console.error('配置解析失败:', e);
+            }
+        }
+        return { ip: '192.168.1.100', port: 80 };
+    }
+
+    function saveESP32Config(ip, port) {
+        localStorage.setItem('esp32_config', JSON.stringify({ ip, port }));
+    }
+
+    function getESP32Url() {
+        const config = getESP32Config();
+        return `http://${config.ip}:${config.port}`;
+    }
+
+    // 兼容旧代码
+    const ESP32_URL = getESP32Url();
+
+    // 传感器数据历史记录
+    const MAX_DATA_POINTS = 100;
+    let sensorHistory = {
+        timestamps: [],
+        temperature: [],
+        humidity: [],
+        mq2: [],
+        water: []
+    };
+    let lastSensorValues = {
+        temperature: null,
+        humidity: null,
+        mq2: null,
+        water: null
+    };
+    let chartInstance = null;
+    let currentChartRange = 20;
+
+    // ==================== 工具函数 ====================
+    function formatTime(date) {
+        return date.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function formatDateTime(date) {
+        return date.toLocaleString('zh-CN', { 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit'
+        });
+    }
+
+    // ==================== 图表初始化 ====================
+    function createGradient(ctx, colorStart, colorEnd) {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, colorStart);
+        gradient.addColorStop(1, colorEnd);
+        return gradient;
+    }
+
+    const chartColors = {
+        temp: {
+            border: '#ef4444',
+            bg: 'rgba(239, 68, 68, 0.15)',
+            bgGradient: ['rgba(239, 68, 68, 0.25)', 'rgba(239, 68, 68, 0.02)'],
+            pointBg: '#ef4444',
+            pointBorder: '#fff'
+        },
+        humidity: {
+            border: '#3b82f6',
+            bg: 'rgba(59, 130, 246, 0.15)',
+            bgGradient: ['rgba(59, 130, 246, 0.25)', 'rgba(59, 130, 246, 0.02)'],
+            pointBg: '#3b82f6',
+            pointBorder: '#fff'
+        },
+        mq2: {
+            border: '#f59e0b',
+            bg: 'rgba(245, 158, 11, 0.15)',
+            bgGradient: ['rgba(245, 158, 11, 0.25)', 'rgba(245, 158, 11, 0.02)'],
+            pointBg: '#f59e0b',
+            pointBorder: '#fff'
+        },
+        water: {
+            border: '#10b981',
+            bg: 'rgba(16, 185, 129, 0.15)',
+            bgGradient: ['rgba(16, 185, 129, 0.25)', 'rgba(16, 185, 129, 0.02)'],
+            pointBg: '#10b981',
+            pointBorder: '#fff'
+        }
+    };
+
+    function initChart() {
+        const ctx = document.getElementById('sensorChart').getContext('2d');
+
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: '温度 (°C)',
+                        data: [],
+                        borderColor: chartColors.temp.border,
+                        backgroundColor: function(context) {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(239, 68, 68, 0.01)');
+                            gradient.addColorStop(1, 'rgba(239, 68, 68, 0.18)');
+                            return gradient;
+                        },
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: chartColors.temp.pointBg,
+                        pointBorderColor: chartColors.temp.pointBorder,
+                        pointBorderWidth: 2,
+                        pointHoverBorderWidth: 3,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: '湿度 (%RH)',
+                        data: [],
+                        borderColor: chartColors.humidity.border,
+                        backgroundColor: function(context) {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.01)');
+                            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.18)');
+                            return gradient;
+                        },
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: chartColors.humidity.pointBg,
+                        pointBorderColor: chartColors.humidity.pointBorder,
+                        pointBorderWidth: 2,
+                        pointHoverBorderWidth: 3,
+                        yAxisID: 'y1'
+                    },
+                    {
+                        label: 'MQ-2 (ppm)',
+                        data: [],
+                        borderColor: chartColors.mq2.border,
+                        backgroundColor: function(context) {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(245, 158, 11, 0.01)');
+                            gradient.addColorStop(1, 'rgba(245, 158, 11, 0.18)');
+                            return gradient;
+                        },
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: chartColors.mq2.pointBg,
+                        pointBorderColor: chartColors.mq2.pointBorder,
+                        pointBorderWidth: 2,
+                        pointHoverBorderWidth: 3,
+                        yAxisID: 'y2'
+                    },
+                    {
+                        label: '水位 (cm)',
+                        data: [],
+                        borderColor: chartColors.water.border,
+                        backgroundColor: function(context) {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.01)');
+                            gradient.addColorStop(1, 'rgba(16, 185, 129, 0.18)');
+                            return gradient;
+                        },
+                        borderWidth: 2.5,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: chartColors.water.pointBg,
+                        pointBorderColor: chartColors.water.pointBorder,
+                        pointBorderWidth: 2,
+                        pointHoverBorderWidth: 3,
+                        yAxisID: 'y3'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: true,
+                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        titleColor: '#f1f5f9',
+                        bodyColor: '#e2e8f0',
+                        borderColor: 'rgba(148, 163, 184, 0.3)',
+                        borderWidth: 1,
+                        cornerRadius: 12,
+                        padding: 14,
+                        displayColors: true,
+                        boxPadding: 6,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        titleFont: { size: 13, weight: '600' },
+                        bodyFont: { size: 12 },
+                        callbacks: {
+                            title: function(context) {
+                                return '📅 ' + context[0].label;
+                            },
+                            label: function(context) {
+                                const icons = ['🌡️', '💧', '💨', '🌊'];
+                                let label = icons[context.datasetIndex] || '';
+                                label += ` ${context.dataset.label}: `;
+                                label += `<strong>${context.parsed.y}</strong>`;
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: 'rgba(226, 232, 240, 0.4)',
+                            drawBorder: false,
+                            lineWidth: 1
+                        },
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { size: 11, weight: '500' },
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 6,
+                            padding: 8
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: '温度 °C',
+                            color: '#ef4444',
+                            font: { size: 11, weight: '600' }
+                        },
+                        grid: {
+                            color: 'rgba(226, 232, 240, 0.35)',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#ef4444',
+                            font: { size: 10, weight: '500' },
+                            padding: 6
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: '湿度 %RH',
+                            color: '#3b82f6',
+                            font: { size: 11, weight: '600' }
+                        },
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            color: '#3b82f6',
+                            font: { size: 10, weight: '500' },
+                            padding: 6
+                        }
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'MQ-2 ppm',
+                            color: '#f59e0b',
+                            font: { size: 11, weight: '600' }
+                        },
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            color: '#f59e0b',
+                            font: { size: 10, weight: '500' },
+                            padding: 6
+                        }
+                    },
+                    y3: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        offset: true,
+                        title: {
+                            display: true,
+                            text: '水位 cm',
+                            color: '#10b981',
+                            font: { size: 11, weight: '600' }
+                        },
+                        grid: { drawOnChartArea: false },
+                        ticks: {
+                            color: '#10b981',
+                            font: { size: 10, weight: '500' },
+                            padding: 6
+                        }
+                    }
+                },
+                animation: {
+                    duration: 800,
+                    easing: 'easeOutQuart',
+                    delay: function(context) {
+                        return context.dataIndex * 30;
+                    }
+                },
+                elements: {
+                    line: {
+                        capBezierPoints: true
+                    }
+                }
+            }
+        });
+    }
+
+    function updateChart() {
+        if (!chartInstance) return;
+
+        const range = Math.min(currentChartRange, sensorHistory.timestamps.length);
+        const startIdx = sensorHistory.timestamps.length - range;
+        
+        chartInstance.data.labels = sensorHistory.timestamps.slice(startIdx);
+        chartInstance.data.datasets[0].data = sensorHistory.temperature.slice(startIdx);
+        chartInstance.data.datasets[1].data = sensorHistory.humidity.slice(startIdx);
+        chartInstance.data.datasets[2].data = sensorHistory.mq2.slice(startIdx);
+        chartInstance.data.datasets[3].data = sensorHistory.water.slice(startIdx);
+        
+        chartInstance.update('active');
+    }
+
+    function setChartTimeRange(range) {
+        currentChartRange = range;
+        document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn-${range}`).classList.add('active');
+        updateChart();
+    }
+
+    function toggleDataset(index) {
+        const meta = chartInstance.getDatasetMeta(index);
+        meta.hidden = meta.hidden === null ? !chartInstance.data.datasets[index].hidden : null;
+        
+        const legendItems = document.querySelectorAll('.legend-item');
+        legendItems[index].classList.toggle('disabled', meta.hidden);
+        
+        chartInstance.update();
+    }
+
+    function highlightSensor(sensorType) {
+        document.querySelectorAll('.sensor-card').forEach(card => card.classList.remove('active'));
+        document.getElementById(`card-${sensorType}`).classList.add('active');
+        
+        const titles = {
+            temp: '温度变化趋势',
+            humidity: '湿度变化趋势',
+            mq2: 'MQ-2浓度变化趋势',
+            water: '水位变化趋势'
+        };
+        document.getElementById('chart-title-text').textContent = titles[sensorType];
+    }
+
+    // ==================== 趋势计算 ====================
+    function calculateTrend(current, previous) {
+        if (previous === null) return { icon: '', class: '' };
+        const diff = current - previous;
+        const threshold = 0.1;
+        
+        if (Math.abs(diff) < threshold) {
+            return { icon: '<i class="fas fa-minus"></i>', class: 'trend-stable' };
+        } else if (diff > 0) {
+            return { icon: '<i class="fas fa-arrow-up"></i>', class: 'trend-up' };
+        } else {
+            return { icon: '<i class="fas fa-arrow-down"></i>', class: 'trend-down' };
+        }
+    }
+
+    // ==================== 视频流控制 ====================
+    function handleStreamError() {
+        document.getElementById('stream-status').textContent = '● 错误';
+        document.getElementById('stream-status').style.color = '#ef4444';
+        if (!window.videoPaused) {
+            setTimeout(() => {
+                const img = document.getElementById('camera-feed');
+                img.src = `${getESP32Url()}/stream?${Date.now()}`;
+            }, 10000);
+        }
+    }
+
+    function pauseVideo() {
+        if (!window.videoStreamStarted) return;
+        window.videoPaused = true;
+        const img = document.getElementById('camera-feed');
+        if (lastFrameData) {
+            img.src = lastFrameData;
+        } else {
+            img.src = '';
+        }
+        document.getElementById('stream-status').textContent = '● 暂停';
+        document.getElementById('stream-status').style.color = '#f59e0b';
+        document.getElementById('pause-video').disabled = true;
+        document.getElementById('start-video').disabled = false;
+    }
+
+    function startVideo() {
+        if (!window.videoStreamStarted) return;
+        window.videoPaused = false;
+        const img = document.getElementById('camera-feed');
+        img.src = `${getESP32Url()}/stream?${Date.now()}`;
+        document.getElementById('stream-status').textContent = '● LIVE';
+        document.getElementById('stream-status').style.color = '#4ade80';
+        document.getElementById('pause-video').disabled = false;
+        document.getElementById('start-video').disabled = true;
+    }
+
+    document.getElementById('camera-feed').addEventListener('load', function() {
+        if (!window.videoPaused) {
+            captureCanvas.width = this.naturalWidth;
+            captureCanvas.height = this.naturalHeight;
+            canvasCtx.drawImage(this, 0, 0);
+            lastFrameData = captureCanvas.toDataURL('image/jpeg');
+        }
+    });
+
+    // ==================== 拍照功能 ====================
+    async function takePhoto() {
+        const photoBtn = document.getElementById('photo-btn');
+        const capturedImg = document.getElementById('captured-photo');
+        const placeholder = document.getElementById('photo-placeholder');
+        const displayArea = document.getElementById('photo-display-area');
+        const timestamp = document.getElementById('photo-timestamp');
+        const useForAIBtn = document.getElementById('use-for-ai-btn');
+        const clearPhotoBtn = document.getElementById('clear-photo-btn');
+
+        if (isPhotoLocked) {
+            alert('照片正在用于AI识别，请等待完成或清除后再拍照');
+            return;
+        }
+
+        photoBtn.disabled = true;
+        const originalText = photoBtn.innerHTML;
+        photoBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> 拍照中...';
+
+        try {
+            let imageData;
+            
+            // 优先使用视频流当前帧（避免与视频流竞争摄像头资源）
+            if (lastFrameData) {
+                imageData = lastFrameData;
+                // 将dataURL转为Blob用于AI识别
+                const response = await fetch(lastFrameData);
+                cachedPhotoBlob = await response.blob();
+                console.log('[拍照] 使用视频流当前帧');
+            } else {
+                // 没有视频流帧时，暂停视频流再拍照
+                const wasStreaming = !window.videoPaused;
+                if (wasStreaming) {
+                    pauseVideo();
+                    await new Promise(r => setTimeout(r, 200));
+                }
+                
+                const response = await fetch(`${getESP32Url()}/capture?${Date.now()}`);
+                if (!response.ok) throw new Error('拍照失败');
+                const blob = await response.blob();
+                imageData = URL.createObjectURL(blob);
+                cachedPhotoBlob = blob;
+                
+                if (wasStreaming) {
+                    await new Promise(r => setTimeout(r, 100));
+                    startVideo();
+                }
+            }
+
+            cachedPhotoData = imageData;
+            capturedImg.src = imageData;
+            capturedImg.classList.add('show');
+            placeholder.classList.add('hidden');
+            displayArea.classList.add('has-image');
+            
+            lastCaptureTime = new Date();
+            timestamp.textContent = formatDateTime(lastCaptureTime);
+            timestamp.classList.add('show');
+            
+            useForAIBtn.disabled = false;
+            clearPhotoBtn.disabled = false;
+            
+        } catch (error) {
+            console.error('[拍照] 失败:', error);
+            alert('拍照失败: ' + error.message);
+        } finally {
+            photoBtn.disabled = false;
+            photoBtn.innerHTML = originalText;
+        }
+    }
+
+    function useForAI() {
+        if (!cachedPhotoData) {
+            alert('请先拍照');
+            return;
+        }
+
+        isPhotoLocked = true;
+        
+        const aiPreview = document.getElementById('ai-photo-preview');
+        const aiPhotoInfo = document.getElementById('ai-photo-info');
+        
+        aiPreview.src = cachedPhotoData;
+        aiPreview.classList.add('show');
+        aiPhotoInfo.classList.add('show');
+        
+        document.getElementById('use-for-ai-btn').disabled = true;
+        document.getElementById('clear-photo-btn').disabled = true;
+        
+        askAI();
+    }
+
+    function clearPhoto() {
+        if (isPhotoLocked) {
+            alert('照片正在用于AI识别，无法清除');
+            return;
+        }
+
+        cachedPhotoData = null;
+        cachedPhotoBlob = null;
+        lastCaptureTime = null;
+
+        const capturedImg = document.getElementById('captured-photo');
+        const placeholder = document.getElementById('photo-placeholder');
+        const displayArea = document.getElementById('photo-display-area');
+        const timestamp = document.getElementById('photo-timestamp');
+
+        capturedImg.src = '';
+        capturedImg.classList.remove('show');
+        placeholder.classList.remove('hidden');
+        displayArea.classList.remove('has-image');
+        timestamp.classList.remove('show');
+
+        document.getElementById('use-for-ai-btn').disabled = true;
+        document.getElementById('clear-photo-btn').disabled = true;
+    }
+
+    // ==================== AI识别 ====================
+    let currentAiMode = 'llm';
+
+    function selectAIMode(mode) {
+        currentAiMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+        const modeNames = { llm: '云端LLM', yolo: 'YOLO检测', local: '本地分析' };
+        console.log(`[AI识别] 模式已切换为: ${modeNames[mode] || mode}`);
+    }
+    async function askAI() {
+        const question = document.getElementById('ai-question').value.trim() || '描述图片';
+        const resultBox = document.getElementById('ai-result');
+        const sendBtn = document.getElementById('ai-send-btn');
+
+        resultBox.className = 'ai-result-box loading';
+        resultBox.innerHTML = '<div class="spinner"></div> 正在分析图片，请稍候...';
+        sendBtn.disabled = true;
+        sendBtn.classList.add('loading');
+
+        try {
+            let requestBody = {};
+
+            if (cachedPhotoBlob) {
+                const base64Image = await blobToBase64(cachedPhotoBlob);
+                requestBody = {
+                    question: question,
+                    image: base64Image,
+                    resolution: 'VGA',
+                    return_image: false,
+                    ai_mode: currentAiMode
+                };
+            } else {
+                requestBody = {
+                    question: question,
+                    resolution: 'VGA',
+                    return_image: false,
+                    ai_mode: currentAiMode
+                };
+            }
+
+            const response = await fetch(`${getESP32Url()}/ask`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) throw new Error('AI识别请求失败');
+
+            // 安全JSON解析：先读取文本，清理控制字符后再解析
+            const rawText = await response.text();
+            let result;
+            try {
+                result = JSON.parse(rawText);
+            } catch (parseErr) {
+                console.error('[AI识别] JSON解析原始错误:', parseErr.message);
+                console.error('[AI识别] 原始响应:', rawText.substring(0, 500));
+                // 尝试修复：移除控制字符后重试
+                const cleaned = rawText.replace(/[\x00-\x1F\x7F]/g, (c) => {
+                    const code = c.charCodeAt(0);
+                    return code === 0x0A ? '\\n' : code === 0x0D ? '\\r' : '';
+                });
+                try {
+                    result = JSON.parse(cleaned);
+                    console.log('[AI识别] 清理后JSON解析成功');
+                } catch (e2) {
+                    throw new Error(`AI返回数据格式异常: ${parseErr.message}`);
+                }
+            }
+            
+            let resultText = '';
+            const source = result.ai_source || 'unknown';
+            const mode = result.ai_mode || currentAiMode;
+            const modeLabels = { llm: '🌐 云端LLM', yolo: '🎯 YOLO检测', local: '🔧 本地分析' };
+
+            if (result.error) {
+                resultText = `<div style="color:#dc2626;padding:8px;background:#fef2f2;border-radius:6px;">
+                    <i class="fas fa-exclamation-triangle"></i> ${result.error}
+                    ${result.suggestion ? '<br><small style="color:#991b1b;">' + result.suggestion + '</small>' : ''}
+                </div>`;
+            } else if (result.ai_result) {
+                resultText = typeof result.ai_result === 'string'
+                    ? result.ai_result
+                    : JSON.stringify(result.ai_result, null, 2);
+            } else if (result.result) {
+                resultText = result.result;
+            } else if (result.analysis) {
+                resultText = result.analysis;
+            } else {
+                resultText = JSON.stringify(result, null, 2);
+            }
+
+            resultText = resultText.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '')
+
+            const base64Pattern = /(?:data:image\/[a-z]+;base64,|["\s]\/[9A-Za-z]{2}[A-Za-z0-9+\/]{50,}={0,2})/
+            if (base64Pattern.test(resultText) || resultText.includes('/9j/') || resultText.includes('/9j/4AAQ')) {
+                resultText = resultText
+                    .replace(/data:image\/[a-z]+;base64,/g, '[图片数据已过滤]')
+                    .replace(/["\s]?\/[9A-Za-z]{2}[A-Za-z0-9+\/]{30,}={0,2}/g, '[...]')
+                    .replace(/\[\.\.\.\](?:\s*\[\.\.\.\])+/g, '[...]')
+                    .trim()
+                
+                if (resultText.length > 2000) {
+                    const jsonMatch = resultText.match(/\{[^{}]*"ai_result"\s*:\s*"/)
+                    if (jsonMatch) {
+                        resultText = resultText.substring(0, resultText.indexOf('"ai_result"')) + '"ai_result":"[响应数据过长或包含无效内容]"'
+                    } else {
+                        resultText = resultText.substring(0, 1500) + '\n\n[⚠️ 响应数据异常，请检查ESP32固件是否为最新版本]'
+                    }
+                }
+            }
+
+            // 根据模式设置不同样式
+            const modeColor = mode === 'yolo' ? '#f59e0b' : mode === 'local' ? '#10b981' : '#667eea';
+            resultBox.className = 'ai-result-box';
+            resultBox.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0;">
+                    <strong>问题：${question}</strong>
+                    <span style="font-size:0.78rem;color:${modeColor};background:${modeColor}15;padding:3px 10px;border-radius:12px;font-weight:600;">
+                        ${modeLabels[mode] || mode}
+                    </span>
+                </div>
+                <div style="white-space:pre-wrap;word-break:break-word;line-height:1.7;">${resultText.replace(/\n/g, '<br>')}</div>
+            `;
+
+        } catch (error) {
+            console.error('[AI识别] 失败:', error);
+            resultBox.className = 'ai-result-box error';
+            resultBox.innerHTML = `<i class="fas fa-exclamation-circle"></i> 识别失败: ${error.message}`;
+        } finally {
+            sendBtn.disabled = false;
+            sendBtn.classList.remove('loading');
+            isPhotoLocked = false;
+            document.getElementById('ai-photo-info').classList.remove('show');
+            document.getElementById('clear-photo-btn').disabled = false;
+        }
+    }
+
+    // Blob转Base64辅助函数
+    function blobToBase64(blob) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    // 安全JSON解析：处理AI返回文本中可能包含的控制字符
+    function safeJsonParse(text) {
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            console.warn('[JSON] 原始解析失败，尝试清理控制字符:', e.message);
+            const cleaned = text.replace(/[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g, '');
+            return JSON.parse(cleaned);
+        }
+    }
+
+    // ==================== 大模型 (LLM) 验证测试模块 ====================
+    // 
+    // 功能说明：
+    //   独立的AI服务连通性测试面板，用于验证API Key和模型是否可用
+    //   支持国内外主流大模型，选择模型后自动填充对应API地址
+    //
+    // 支持的AI服务商及预设API地址：
+    //   ┌─────────────────┬──────────────────────────────────────────────┐
+    //   │ 服务商          │ API地址                                     │
+    //   ├─────────────────┼──────────────────────────────────────────────┤
+    //   │ OpenAI          │ https://api.openai.com/v1/chat/completions  │
+    //   │ 通义千问(阿里)  │ https://dashscope.aliyuncs.com/...           │
+    //   │ Kimi(月之暗面) │ https://api.moonshot.cn/v1/chat/completions  │
+    //   │ DeepSeek        │ https://api.deepseek.com/v1/chat/completions │
+    //   │ 豆包(火山引擎)  │ https://ark.cn-beijing.volces.com/...       │
+    //   └─────────────────┴──────────────────────────────────────────────┘
+    //
+    // 使用流程：
+    //   1. 选择模型（自动填充API地址）
+    //   2. 填写API Key
+    //   3. 点击"运行测试"验证连通性
+    //   4. 测试通过后可"同步到ESP32"供设备端AI识别使用
+
+    /**
+     * 模型预设配置表 - 存储各服务商的API端点地址
+     * 格式: { model_id: { url: "https://...", label: "显示名称" } }
+     */
+    const AI_MODEL_PRESETS = {
+        'gpt-4o-mini': { url: 'https://api.openai.com/v1/chat/completions', label: 'OpenAI' },
+        'gpt-4o':      { url: 'https://api.openai.com/v1/chat/completions', label: 'OpenAI' },
+        'gpt-3.5-turbo':{ url: 'https://api.openai.com/v1/chat/completions', label: 'OpenAI' },
+        'qwen-turbo':  { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', label: '阿里云-通义千问' },
+        'qwen-plus':   { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', label: '阿里云-通义千问' },
+        'qwen-max':    { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions', label: '阿里云-通义千问' },
+        'kimi':        { url: 'https://api.moonshot.cn/v1/chat/completions', label: '月之暗面-Kimi' },
+        'deepseek-chat':     { url: 'https://api.deepseek.com/v1/chat/completions', label: 'DeepSeek' },
+        'deepseek-reasoner': { url: 'https://api.deepseek.com/v1/chat/completions', label: 'DeepSeek' },
+        'doubao-pro':  { url: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', label: '火山引擎-豆包' },
+        'doubao-lite': { url: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions', label: '火山引擎-豆包' }
+    };
+
+    function onModelChange() {
+        const model = document.getElementById('test-ai-model').value;
+        const preset = AI_MODEL_PRESETS[model];
+        if (preset) {
+            document.getElementById('test-ai-url').value = preset.url;
+            console.log(`[AI测试] 已选择 ${preset.label}，API地址已自动填充`);
+        }
+    }
+
+    function loadAIConfig() {
+        const saved = localStorage.getItem('ai_test_config');
+        if (saved) {
+            try {
+                const config = JSON.parse(saved);
+                document.getElementById('test-ai-url').value = config.url || '';
+                document.getElementById('test-ai-key').value = config.key || '';
+                document.getElementById('test-ai-model').value = config.model || 'gpt-4o-mini';
+                document.getElementById('test-ai-timeout').value = config.timeout || 30;
+            } catch (e) {}
+        }
+    }
+
+    async function runAITest() {
+        const resultBox = document.getElementById('ai-test-result');
+        const testBtn = document.getElementById('btn-ai-test');
+        
+        const apiUrl = document.getElementById('test-ai-url').value.trim();
+        const apiKey = document.getElementById('test-ai-key').value.trim();
+        let model = document.getElementById('test-ai-model').value;
+        const timeout = parseInt(document.getElementById('test-ai-timeout').value) || 30;
+        const question = document.getElementById('test-ai-question').value.trim() || '你好';
+
+        if (!apiUrl) { alert('请输入API地址'); return; }
+        if (!apiKey) { alert('请输入API Key'); return; }
+        if (model === 'custom') { model = ''; alert('请选择或输入模型名称'); return; }
+
+        resultBox.className = 'ai-test-result';
+        resultBox.innerHTML = `<div style="display:flex;align-items:center;gap:8px;"><div class="spinner" style="width:18px;height:18px;border-width:2px;"></div>正在连接 ${model}...</div>`;
+        testBtn.disabled = true;
+
+        const startTime = Date.now();
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout * 1000);
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages: [{ role: 'user', content: question }],
+                    max_tokens: 500,
+                    temperature: 0.7
+                }),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
+            const latency = Date.now() - startTime;
+            
+            if (!response.ok) {
+                const errText = await response.text().catch(() => '');
+                throw new Error(`HTTP ${response.status}: ${errText.substring(0, 200)}`);
+            }
+
+            const data = await safeJsonParse(await response.text());
+            const reply = data.choices?.[0]?.message?.content || data.response || JSON.stringify(data);
+            const usage = data.usage ? ` | Token: 输入${usage.prompt_tokens}, 输出${usage.completion_tokens}` : '';
+            const modelInfo = data.model ? ` (${data.model})` : '';
+
+            resultBox.className = 'ai-test-result success';
+            resultBox.innerHTML = `
+                <div style="color:#166534;font-weight:600;margin-bottom:10px;">
+                    <i class="fas fa-check-circle"></i> 测试成功 ${modelInfo}
+                </div>
+                <div style="margin-bottom:8px;color:#15803d;"><strong>响应时间:</strong> ${latency}ms${usage}</div>
+                <div style="padding:12px;background:#f0fdf4;border-radius:8px;border-left:3px solid #22c55e;">
+                    <strong>回复:</strong><br>${reply.replace(/\n/g, '<br>')}
+                </div>
+            `;
+        } catch (error) {
+            const latency = Date.now() - startTime;
+            resultBox.className = 'ai-test-result error';
+            if (error.name === 'AbortError') {
+                resultBox.innerHTML = `
+                    <div style="color:#dc2626;font-weight:600;margin-bottom:8px;"><i class="fas fa-times-circle"></i> 请求超时</div>
+                    <div>超时时间: ${timeout}秒 | 已用: ${latency}ms</div>
+                    <div style="margin-top:6px;color:#991b1b;">建议: 检查网络或增加超时时间</div>
+                `;
+            } else {
+                resultBox.innerHTML = `
+                    <div style="color:#dc2626;font-weight:600;margin-bottom:8px;"><i class="fas fa-times-circle"></i> 测试失败</div>
+                    <div style="margin-bottom:6px;">耗时: ${latency}ms</div>
+                    <div style="color:#991b1b;word-break:break-all;">错误: ${error.message}</div>
+                `;
+            }
+        } finally {
+            testBtn.disabled = false;
+        }
+    }
+
+    function saveAIConfig() {
+        const config = {
+            url: document.getElementById('test-ai-url').value.trim(),
+            key: document.getElementById('test-ai-key').value.trim(),
+            model: document.getElementById('test-ai-model').value,
+            timeout: parseInt(document.getElementById('test-ai-timeout').value) || 30
+        };
+        localStorage.setItem('ai_test_config', JSON.stringify(config));
+        const resultBox = document.getElementById('ai-test-result');
+        resultBox.className = 'ai-test-result success';
+        resultBox.innerHTML = '<i class="fas fa-check-circle" style="color:#16a34a;"></i> 配置已保存到本地存储';
+    }
+
+    async function testAIConfigToESP32() {
+        const resultBox = document.getElementById('ai-test-result');
+        const apiUrl = document.getElementById('test-ai-url').value.trim();
+        const apiKey = document.getElementById('test-ai-key').value.trim();
+
+        if (!apiUrl || !apiKey) {
+            resultBox.className = 'ai-test-result error';
+            resultBox.innerHTML = '<i class="fas fa-exclamation-triangle"></i> 请先填写API地址和Key';
+            return;
+        }
+
+        resultBox.className = 'ai-test-result';
+        resultBox.innerHTML = '<div class="spinner" style="width:18px;height:18px;display:inline-block;"></div> 正在同步配置到ESP32...';
+
+        try {
+            const response = await fetch(`${getESP32Url()}/config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ai_service_url: apiUrl,
+                    ai_api_key: apiKey,
+                    ai_model: document.getElementById('test-ai-model').value,
+                    ai_mode: currentAiMode
+                })
+            });
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const result = await response.json();
+            const modeLabel = { llm: '云端LLM', yolo: 'YOLO检测', local: '本地分析' };
+            resultBox.className = 'ai-test-result success';
+            resultBox.innerHTML = `<i class="fas fa-microchip" style="color:#16a34a;"></i> AI配置已同步到ESP32 (模式: ${modeLabel[currentAiMode] || currentAiMode})`;
+        } catch (error) {
+            resultBox.className = 'ai-test-result error';
+            resultBox.innerHTML = `<i class="fas fa-times-circle"></i> 同步失败: ${error.message}<br>请确保ESP32在线`;
+        }
+    }
+
+    // ==================== 传感器数据获取 ====================
+    async function fetchSensorData() {
+        try {
+            const response = await fetch(`${getESP32Url()}/sensors`, { 
+                method: 'GET',
+                headers: { 'Accept': 'application/json' }
+            });
+            
+            if (!response.ok) throw new Error('获取传感器数据失败');
+            
+            const data = await response.json();
+            
+            const temp = parseFloat(data.temperature);
+            const hum = parseFloat(data.humidity);
+            const mq2 = parseInt(data.mq2);
+            const water = parseFloat(data.water_level);
+            const now = new Date();
+            const timeStr = formatTime(now);
+
+            // 更新显示值
+            document.getElementById('temp-value').textContent = isNaN(temp) ? '--' : temp.toFixed(1);
+            document.getElementById('hum-value').textContent = isNaN(hum) ? '--' : hum.toFixed(1);
+            document.getElementById('mq2-value').textContent = isNaN(mq2) ? '--' : mq2;
+            document.getElementById('water-value').textContent = isNaN(water) ? '--' : water.toFixed(1);
+
+            // 计算并显示趋势
+            const tempTrend = calculateTrend(temp, lastSensorValues.temperature);
+            const humTrend = calculateTrend(hum, lastSensorValues.humidity);
+            const mq2Trend = calculateTrend(mq2, lastSensorValues.mq2);
+            const waterTrend = calculateTrend(water, lastSensorValues.water);
+
+            document.getElementById('temp-trend').innerHTML = tempTrend.icon;
+            document.getElementById('temp-trend').className = `sensor-trend ${tempTrend.class}`;
+            document.getElementById('hum-trend').innerHTML = humTrend.icon;
+            document.getElementById('hum-trend').className = `sensor-trend ${humTrend.class}`;
+            document.getElementById('mq2-trend').innerHTML = mq2Trend.icon;
+            document.getElementById('mq2-trend').className = `sensor-trend ${mq2Trend.class}`;
+            document.getElementById('water-trend').innerHTML = waterTrend.icon;
+            document.getElementById('water-trend').className = `sensor-trend ${waterTrend.class}`;
+
+            // 保存当前值用于下次趋势计算
+            lastSensorValues = { temperature: temp, humidity: hum, mq2: mq2, water: water };
+
+            // 添加到历史记录
+            sensorHistory.timestamps.push(timeStr);
+            sensorHistory.temperature.push(isNaN(temp) ? null : temp);
+            sensorHistory.humidity.push(isNaN(hum) ? null : hum);
+            sensorHistory.mq2.push(isNaN(mq2) ? null : mq2);
+            sensorHistory.water.push(isNaN(water) ? null : water);
+
+            // 限制历史记录长度
+            if (sensorHistory.timestamps.length > MAX_DATA_POINTS) {
+                sensorHistory.timestamps.shift();
+                sensorHistory.temperature.shift();
+                sensorHistory.humidity.shift();
+                sensorHistory.mq2.shift();
+                sensorHistory.water.shift();
+            }
+
+            // 更新图表
+            updateChart();
+
+            // 更新状态栏
+            document.getElementById('update-time').textContent = '更新于 ' + timeStr;
+            document.getElementById('status-dot').classList.remove('error');
+            document.getElementById('status-text').textContent = '在线';
+            
+        } catch (error) {
+            console.error('[传感器] 获取失败:', error);
+            document.getElementById('status-dot').classList.add('error');
+            document.getElementById('status-text').textContent = '离线';
+        }
+    }
+
+    // ==================== 初始化 ====================
+    function init() {
+        // 初始化视频流
+        const img = document.getElementById('camera-feed');
+        img.src = `${getESP32Url()}/stream`;
+        window.videoStreamStarted = true;
+        document.getElementById('pause-video').disabled = false;
+
+        // 初始化图表
+        initChart();
+
+        // 加载AI测试配置
+        loadAIConfig();
+
+        // 立即获取一次传感器数据
+        fetchSensorData();
+
+        // 定时获取传感器数据（每3秒）
+        setInterval(fetchSensorData, 3000);
+
+        console.log('[初始化] 环境监测站已启动');
+    }
+
+    // 页面加载完成后初始化
+    window.addEventListener('load', init);
+
+    // 配置弹窗相关函数
+    function showConfigModal() {
+        const config = getESP32Config();
+        document.getElementById('config-ip').value = config.ip;
+        document.getElementById('config-port').value = config.port;
+        document.getElementById('config-modal').classList.add('show');
+    }
+
+    function hideConfigModal() {
+        document.getElementById('config-modal').classList.remove('show');
+    }
+
+    function saveConfigAndReload() {
+        const ip = document.getElementById('config-ip').value.trim() || '192.168.1.100';
+        const port = parseInt(document.getElementById('config-port').value) || 80;
+        saveESP32Config(ip, port);
+        hideConfigModal();
+        // 重新加载页面以应用新配置
+        location.reload();
+    }
+
+    // 点击弹窗外部关闭
+    document.getElementById('config-modal').addEventListener('click', function(e) {
+        if (e.target === this) hideConfigModal();
+    });
+</script>
+
+<!-- 配置弹窗 -->
+<div class="modal-overlay" id="config-modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-cog"></i> ESP32 配置</h3>
+        <input type="text" id="config-ip" placeholder="IP地址 (如: 192.168.1.100)">
+        <input type="number" id="config-port" placeholder="端口 (默认: 80)">
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="hideConfigModal()">取消</button>
+            <button class="btn-primary" onclick="saveConfigAndReload()">保存</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

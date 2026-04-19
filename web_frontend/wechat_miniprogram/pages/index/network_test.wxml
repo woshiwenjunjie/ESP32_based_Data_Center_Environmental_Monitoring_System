@@ -1,0 +1,150 @@
+<!--network_test.wxml-->
+<view class="container">
+  <view class="header">
+    <text class="title">网络诊断工具</text>
+    <text class="subtitle">排查ESP32连接问题</text>
+  </view>
+
+  <!-- ESP32地址配置 -->
+  <view class="config-section">
+    <view class="section-title">ESP32地址配置</view>
+    <input
+      class="url-input"
+      value="{{esp32Ip}}"
+      bindinput="inputIp"
+      placeholder="192.168.x.x"
+    />
+    <input
+      class="url-input"
+      value="{{esp32Port}}"
+      bindinput="inputPort"
+      placeholder="端口 (默认80)"
+      type="number"
+    />
+    <button class="save-btn" bindtap="saveConfig">保存配置</button>
+  </view>
+
+  <!-- 测试控制 -->
+  <view class="test-control">
+    <button 
+      class="test-btn {{isTesting ? 'testing' : ''}}" 
+      bindtap="runFullTest"
+      disabled="{{isTesting}}"
+    >
+      {{isTesting ? '测试中...' : '开始完整测试'}}
+    </button>
+  </view>
+
+  <!-- 测试结果 -->
+  <view class="results-section">
+    <view class="section-title">测试结果</view>
+    
+    <view wx:if="{{testResults.length === 0}}" class="no-results">
+      <text class="placeholder">点击"开始完整测试"运行诊断</text>
+    </view>
+    
+    <view wx:else class="results-list">
+      <view 
+        wx:for="{{testResults}}" 
+        wx:key="index"
+        class="result-item {{item.type}}"
+      >
+        <view class="result-header">
+          <text class="result-name">{{item.name}}</text>
+          <text class="result-status">{{item.status}}</text>
+        </view>
+        <view wx:if="{{item.detail}}" class="result-detail">
+          {{item.detail}}
+        </view>
+        <view class="result-time">{{item.time}}</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 常见问题 -->
+  <view class="tips-section">
+    <view class="section-title">常见问题</view>
+    <view class="tip-item">
+      <text class="tip-title">1. 连接失败</text>
+      <text class="tip-content">确保手机和ESP32在同一WiFi网络</text>
+    </view>
+    <view class="tip-item">
+      <text class="tip-title">2. 调试模式</text>
+      <text class="tip-content">点击右上角菜单 → 开发调试 → 打开调试</text>
+    </view>
+    <view class="tip-item">
+      <text class="tip-title">3. IP地址变化</text>
+      <text class="tip-content">查看ESP32串口输出获取最新IP</text>
+    </view>
+  </view>
+
+  <!-- 大模型验证测试 -->
+  <view class="ai-test-section" style="margin-top: 24rpx; padding: 28rpx; background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border-radius: 20rpx; border: 2rpx solid #fbbf24;">
+    <view class="section-title" style="color: #92400e; font-weight: 700; display: flex; align-items: center; gap: 10rpx;">
+      <text style="font-size: 36rpx;">🧪</text>大模型 (LLM) 验证测试
+    </view>
+
+    <view style="display: flex; flex-direction: column; gap: 16rpx; margin-top: 20rpx;">
+      <input
+        class="url-input"
+        value="{{aiUrl}}"
+        bindinput="inputAiUrl"
+        placeholder="API地址 (如 https://api.openai.com/v1/chat/completions)"
+        style="background: white; border-color: #fcd34d;"
+      />
+      <input
+        class="url-input"
+        value="{{aiKey}}"
+        bindinput="inputAiKey"
+        placeholder="API Key (sk-...)"
+        password="{{true}}"
+        style="background: white; border-color: #fcd34d;"
+      />
+      
+      <view style="display: flex; gap: 12rpx; align-items: center;">
+        <text style="font-size: 26rpx; color: #92400e; width: 120rpx;">模型:</text>
+        <picker mode="selector" range="{{modelList}}" range-key="name" value="{{0}}" bindchange="pickAiModel" style="flex:1;">
+          <view style="padding: 14rpx 18rpx; background: white; border: 1rpx solid #fcd34d; border-radius: 10rpx; font-size: 27rpx; color: #451a03;">{{aiModel}}</view>
+        </picker>
+        <input
+          value="{{aiTimeout}}"
+          bindinput="inputAiTimeout"
+          placeholder="超时(s)"
+          type="number"
+          style="width: 140rpx; padding: 14rpx; background: white; border: 1rpx solid #fcd34d; border-radius: 10rpx;"
+        />
+      </view>
+
+      <textarea
+        value="{{aiQuestion}}"
+        bindinput="inputAiQuestion"
+        placeholder="输入测试问题..."
+        maxlength="500"
+        auto-height
+        style="background: white; border: 1rpx solid #fcd34d; border-radius: 10rpx; padding: 16rpx; font-size: 27rpx; min-height: 80rpx;"
+      />
+
+      <view style="display: flex; gap: 12rpx;">
+        <button 
+          style="flex:1; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; font-size: 27rpx; border-radius: 12rpx;" 
+          bindtap="runAITest"
+        >运行测试</button>
+        <button 
+          style="width: 180rpx; background: white; color: #92400e; border: 1rpx solid #fcd34d; font-size: 26rpx; border-radius: 12rpx;" 
+          bindtap="saveAiConfig"
+        >保存配置</button>
+        <button 
+          style="width: 160rpx; background: white; color: #92400e; border: 1rpx solid #fcd34d; font-size: 25rpx; border-radius: 12rpx;" 
+          bindtap="syncAiToEsp32"
+        >同步ESP32</button>
+      </view>
+
+      <view wx:if="{{aiTestResult}}" style="margin-top: 16rpx; padding: 20rpx; background: {{aiTestStatus === 'success' ? '#f0fdf4' : aiTestStatus === 'error' ? '#fef2f2' : 'white'}}; border-radius: 12rpx; border-left: 4rpx solid {{aiTestStatus === 'success' ? '#22c55e' : aiTestStatus === 'error' ? '#ef4444' : '#fbbf24'}}; font-family: monospace; font-size: 25rpx; line-height: 1.7; color: {{aiTestStatus === 'success' ? '#166534' : aiTestStatus === 'error' ? '#991b1b' : '#451a03'}}; max-height: 400rpx; overflow-y: auto; word-break: break-all;">
+        {{aiTestResult}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 返回按钮 -->
+  <button class="back-btn" bindtap="goBack">返回首页</button>
+</view>

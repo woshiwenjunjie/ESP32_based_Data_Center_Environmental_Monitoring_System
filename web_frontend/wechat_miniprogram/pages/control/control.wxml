@@ -1,0 +1,437 @@
+<view class="control-container {{themeMode}}">
+  
+  <view class="bg-orb orb-1"></view>
+  <view class="bg-orb orb-2"></view>
+  <view class="bg-orb orb-3"></view>
+
+  <view class="control-header">
+    <view class="header-left">
+      <view class="status-dot-wrapper {{isOnline ? 'online' : 'offline'}}">
+        <view class="status-dot"></view>
+      </view>
+      <text class="header-status">{{isOnline ? '设备在线' : '离线'}}</text>
+    </view>
+    <view class="header-center">
+      <text class="header-title">外设控制面板</text>
+    </view>
+    <view class="header-right">
+      <view class="refresh-btn" bindtap="manualRefreshStates">
+        <text class="refresh-icon">↻</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="error-banner {{showError ? 'visible' : ''}}" wx:if="{{showError}}">
+    <view class="error-line"></view>
+    <text class="error-icon">⚠</text>
+    <text class="error-text">{{errorMessage}}</text>
+    <view class="error-dismiss" bindtap="dismissError">✕</view>
+  </view>
+
+  <view class="device-grid">
+    
+    <view class="device-card relay-card {{relayState ? 'active' : ''}}">
+      <view class="card-glow relay-glow" wx:if="{{relayState}}"></view>
+      <view class="card-inner">
+        <view class="card-top-bar compact-top">
+          <view class="device-icon relay-icon">
+            <text class="icon-symbol">⏻</text>
+          </view>
+          <view class="device-meta">
+            <text class="device-name">继电</text>
+            <text class="device-sub">Relay</text>
+          </view>
+          <switch 
+            checked="{{relayState}}" 
+            bindchange="onRelayToggle"
+            color="#10b981"
+            disabled="{{!isOnline || isOperating}}"
+          />
+        </view>
+
+        <view class="card-divider"></view>
+
+        <view class="relay-actions">
+          <view 
+            class="action-btn btn-on {{relayState ? 'btn-active' : ''}}" 
+            bindtap="controlRelay" 
+            data-action="on"
+            hover-class="btn-press"
+          >
+            <text>ON</text>
+          </view>
+          <view 
+            class="action-btn btn-off {{!relayState && relayState !== null ? 'btn-active' : ''}}" 
+            bindtap="controlRelay" 
+            data-action="off"
+            hover-class="btn-press"
+          >
+            <text>OFF</text>
+          </view>
+          <view 
+            class="action-btn btn-toggle" 
+            bindtap="controlRelay" 
+            data-action="toggle"
+            hover-class="btn-press"
+          >
+            <text>↻</text>
+          </view>
+        </view>
+        
+        <view class="status-line {{relayState ? 'status-on' : 'status-off'}}">
+          <view class="status-dot"></view>
+          <text>{{relayState ? '电路接通' : '电路断开'}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="device-card buzzer-card {{buzzerState ? 'active' : ''}}">
+      <view class="card-glow buzzer-glow" wx:if="{{buzzerState}}"></view>
+      <view class="card-inner">
+        <view class="card-top-bar compact-top">
+          <view class="device-icon buzzer-icon">
+            <text class="icon-symbol">♫</text>
+          </view>
+          <view class="device-meta">
+            <text class="device-name">蜂鸣</text>
+            <text class="device-sub">Buzzer</text>
+          </view>
+          <switch 
+            checked="{{buzzerState}}" 
+            bindchange="onBuzzerToggle"
+            color="#3b82f6"
+            disabled="{{!isOnline || isOperating}}"
+          />
+        </view>
+
+        <!-- 开启时显示当前频率状态 -->
+        <view class="buzzer-status-freq" wx:if="{{buzzerState}}">
+          <view class="freq-display-ring"></view>
+          <text class="freq-current-value">{{freqOptions[selectedFreqIndex]}}</text>
+          <text class="freq-unit-label">Hz 播放中</text>
+        </view>
+
+        <view class="card-divider"></view>
+
+        <view class="buzzer-controls-compact">
+          <!-- 频率选择和自定义输入一行 -->
+          <view class="freq-control-row">
+            <picker 
+              mode="selector" 
+              range="{{freqOptions}}" 
+              value="{{selectedFreqIndex}}"
+              bindchange="onFreqChange"
+              disabled="{{!isOnline || buzzerState}}"
+            >
+              <view class="freq-picker-mini">
+                <text class="freq-num">{{freqOptions[selectedFreqIndex]}}</text>
+                <text class="freq-u">Hz</text>
+                <text class="arrow-down">▼</text>
+              </view>
+            </picker>
+            
+            <input 
+              class="freq-custom-input" 
+              type="number" 
+              placeholder="自定义Hz"
+              placeholder-style="color: rgba(232,234,255,0.35); font-size:22rpx;"
+              value="{{buzzerFreqInput}}"
+              bindinput="onBuzzerFreqInputChange"
+              bindconfirm="onBuzzerFreqInputConfirm"
+              disabled="{{!isOnline || buzzerState}}"
+            />
+            <view 
+              class="freq-confirm-btn" 
+              catchtap="applyBuzzerFreqInput"
+            >SET</view>
+          </view>
+          
+          <text class="freq-range-tip">范围 100~10000 Hz</text>
+
+          <!-- 播放按钮 -->
+          <view 
+            class="beep-btn {{isBeeping ? 'beep-active' : ''}}" 
+            bindtap="playBuzzerBeep"
+          >
+            <text class="beep-icon">{{isBeeping ? '◌' : '♪'}}</text>
+            <text>{{isBeeping ? '播放中...' : '试听'}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="device-card motor-card {{motorSpeed > 0 ? 'active' : ''}}">
+      <view class="card-glow motor-glow" wx:if="{{motorSpeed > 0}}"></view>
+      <view class="card-inner">
+        <view class="card-top-bar">
+          <view class="device-icon motor-icon">
+            <text class="icon-symbol">⚙</text>
+          </view>
+          <view class="device-meta">
+            <text class="device-name">电机</text>
+            <text class="device-sub">DC Motor</text>
+          </view>
+          <view class="badge {{motorSpeed > 0 ? 'badge-on' : 'badge-off'}}">
+            <view class="badge-dot"></view>
+            <text>{{motorSpeed > 0 ? '运行中' : '停止'}}</text>
+          </view>
+        </view>
+
+        <view class="card-divider"></view>
+
+        <view class="card-controls">
+          <!-- 速度控制区域 -->
+          <view class="speed-control-section">
+            <!-- 统一控制行 -->
+            <view class="control-row">
+              <!-- 左侧数值显示 -->
+              <view class="value-display motor-value-display">
+                <view class="value-ring">
+                  <text class="value-num">{{motorPercent}}</text>
+                  <text class="value-unit">%</text>
+                </view>
+                <view class="value-detail">
+                  <text class="value-sub">PWM {{motorSpeed}}</text>
+                  <text class="value-status {{motorSpeed > 0 ? 'status-on' : 'status-off'}}">{{motorSpeed > 0 ? '运行中' : '已停止'}}</text>
+                </view>
+              </view>
+
+              <!-- 右侧滑块区域 -->
+              <view class="slider-wrapper">
+                <view class="slider-track-container" bindtap="onMotorSliderTrackTap">
+                  <slider 
+                    min="0" max="100" value="{{motorPercent}}"
+                    activeColor="#8b5cf6"
+                    backgroundColor="rgba(139,92,246,0.15)"
+                    block-size="22"
+                    block-color="#8b5cf6"
+                    show-value="{{false}}"
+                    bindchange="onMotorSpeedChange"
+                    bindchanging="onMotorSpeedChanging"
+                    disabled="{{!isOnline}}"
+                    class="control-slider motor-slider"
+                    catchtouchstart="onSliderTouchStart"
+                    catchtouchend="onSliderTouchEnd"
+                  />
+                </view>
+                <!-- 刻度标记 -->
+                <view class="slider-marks">
+                  <view class="mark" wx:for="{{[0,25,50,75,100]}}" wx:key="*this">
+                    <view class="mark-line {{motorPercent >= item ? 'mark-active' : ''}}"></view>
+                    <text class="mark-label">{{item}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+
+            <!-- 预设按钮 -->
+            <view class="preset-row">
+              <view 
+                class="preset-item {{motorPercent === item ? 'preset-active' : ''}}" 
+                wx:for="{{[25,50,75,100]}}" 
+                wx:key="*this"
+                bindtap="setMotorPreset" 
+                data-percent="{{item}}"
+                hover-class="preset-tap"
+              >
+                <text>{{item}}%</text>
+              </view>
+            </view>
+
+            <!-- 数值输入控制 -->
+            <view class="input-section" bindtap="onMotorInputTap">
+              <text class="input-label">精确</text>
+              <view class="numeric-input-wrapper">
+                <input 
+                  class="numeric-input" 
+                  type="number" 
+                  placeholder="0-100"
+                  placeholder-style="color: rgba(232,234,255,0.4);"
+                  value="{{motorInputValue}}"
+                  bindinput="onMotorInputChange"
+                  bindconfirm="onMotorInputConfirm"
+                  disabled="{{!isOnline}}"
+                />
+                <text class="input-unit">%</text>
+              </view>
+              <view 
+                class="input-submit-btn" 
+                catchtap="submitMotorInput"
+                hover-class="btn-hover"
+              >
+                <text>▶</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="device-card servo-card">
+      <view class="card-glow servo-glow"></view>
+      <view class="card-inner">
+        <view class="card-top-bar">
+          <view class="device-icon servo-icon">
+            <text class="icon-symbol">◎</text>
+          </view>
+          <view class="device-meta">
+            <text class="device-name">舵机</text>
+            <text class="device-sub">SG90 Servo</text>
+          </view>
+          <view class="badge badge-neutral">
+            <text>{{servoAngle}}°</text>
+          </view>
+        </view>
+
+        <view class="card-divider"></view>
+
+        <view class="card-controls">
+          <!-- 统一控制行 -->
+          <view class="control-row">
+            <!-- 左侧仪表盘 -->
+            <view class="value-display servo-value-display">
+              <view class="gauge-track">
+                <!-- 刻度标记 -->
+                <view class="gauge-marks">
+                  <view class="gauge-mark" wx:for="{{[0,45,90,135,180]}}" wx:key="*this" style="transform: rotate({{item - 90}}deg)">
+                    <view class="gauge-mark-line {{servoAngle >= item ? 'mark-line-active' : ''}}"></view>
+                  </view>
+                </view>
+                <view class="gauge-fill" style="--servo-angle: {{servoAngle}}deg;"></view>
+                <view class="gauge-needle" style="transform: rotate({{servoAngle - 90}}deg)">
+                  <view class="needle-head"></view>
+                </view>
+                <view class="gauge-center"></view>
+              </view>
+              <text class="angle-display">{{servoAngle}}°</text>
+            </view>
+
+            <!-- 右侧滑块区域 -->
+            <view class="slider-wrapper">
+              <view class="slider-track-container" bindtap="onServoSliderTrackTap">
+                <slider 
+                  min="0" max="180" value="{{servoAngle}}"
+                  activeColor="#f59e0b"
+                  backgroundColor="rgba(245,158,11,0.15)"
+                  block-size="18"
+                  block-color="#f59e0b"
+                  show-value="{{false}}"
+                  bindchange="onServoAngleChange"
+                  bindchanging="onServoAngleChanging"
+                  disabled="{{!isOnline}}"
+                  class="control-slider servo-slider"
+                  catchtouchstart="onSliderTouchStart"
+                  catchtouchend="onSliderTouchEnd"
+                />
+              </view>
+              <!-- 刻度标记 -->
+              <view class="slider-marks servo-marks">
+                <view class="mark" wx:for="{{[0,45,90,135,180]}}" wx:key="*this">
+                  <view class="mark-line {{servoAngle >= item ? 'mark-active' : ''}}"></view>
+                  <text class="mark-label">{{item}}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 预设按钮 -->
+          <view class="preset-row preset-row-wide">
+            <view 
+              class="preset-item preset-wider {{servoAngle === item ? 'preset-active' : ''}}" 
+              wx:for="{{[0,45,90,135,180]}}" 
+              wx:key="*this"
+              bindtap="setServoPreset" 
+              data-angle="{{item}}"
+              hover-class="preset-tap"
+            >
+              <text>{{item}}°</text>
+            </view>
+          </view>
+
+          <!-- 数值输入控制 -->
+          <view class="input-section servo-input-section" bindtap="onServoInputTap">
+            <text class="input-label">精确</text>
+            <view class="numeric-input-wrapper">
+              <input 
+                class="numeric-input" 
+                type="digit" 
+                placeholder="0-180"
+                placeholder-style="color: rgba(232,234,255,0.4);"
+                value="{{servoInputValue}}"
+                bindinput="onServoInputChange"
+                bindconfirm="onServoInputConfirm"
+                disabled="{{!isOnline}}"
+              />
+              <text class="input-unit">°</text>
+            </view>
+            <view 
+              class="input-submit-btn" 
+              catchtap="submitServoInput"
+              hover-class="btn-hover"
+            >
+              <text>▶</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+  </view>
+
+  <view class="bottom-bar">
+    <view class="bar-section">
+      <view class="bar-icon">📡</view>
+      <text class="bar-text">在线设备 <text class="bar-highlight">{{onlineCount}}</text>/4</text>
+    </view>
+    <view class="bar-sep"></view>
+    <view class="bar-section bar-right" wx:if="{{lastOperation}}">
+      <text class="bar-last">{{lastOperation}}</text>
+    </view>
+  </view>
+
+  <!-- 自动控制入口 -->
+  <view class="auto-control-entry" bindtap="goToAutoControl">
+    <view class="entry-left">
+      <view class="entry-icon">⚙️</view>
+      <view class="entry-text">
+        <text class="entry-title">超限自动控制</text>
+        <text class="entry-desc">传感器阈值自动触发外设</text>
+      </view>
+    </view>
+    <view class="entry-arrow">→</view>
+  </view>
+
+  <view class="history-panel" wx:if="{{operationHistory.length > 0}}">
+    <view class="history-toggle" bindtap="toggleHistory">
+      <view class="history-header-left">
+        <text class="history-icon">📋</text>
+        <text class="history-label">操作记录</text>
+        <view class="history-count">{{operationHistory.length}}</view>
+      </view>
+      <text class="history-chevron {{showHistory ? 'chevron-up' : ''}}">▼</text>
+    </view>
+    <scroll-view 
+      class="history-body {{showHistory ? 'body-open' : ''}}" 
+      scroll-y 
+      enhanced 
+      show-scrollbar="{{false}}"
+      wx:if="{{showHistory}}"
+    >
+      <view 
+        class="history-entry" 
+        wx:for="{{operationHistory}}" 
+        wx:key="index"
+      >
+        <view class="entry-main">
+          <view class="entry-time">{{item.time}}</view>
+          <view class="entry-device">{{item.device}}</view>
+          <view class="entry-action">{{item.action}}</view>
+        </view>
+        <view class="entry-result {{item.success ? 'result-ok' : 'result-fail'}}">
+          <text>{{item.success ? '✓' : '✗'}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+</view>

@@ -1,0 +1,784 @@
+<!--index.wxml - 五页面架构: 传感器监测 / 外设控制 / 视频拍照 / AI识别 / 测试工具 -->
+<view class="app-container {{themeMode}}">
+  <!-- 顶部标题栏 -->
+  <view class="top-header">
+    <view class="header-left">
+      <text class="status-dot {{isOnline ? 'online' : 'offline'}}"></text>
+      <text class="header-status">{{isOnline ? '在线' : '离线'}}</text>
+    </view>
+    <text class="header-title">ESP32 环境监测站</text>
+    <text class="theme-toggle-btn" bindtap="toggleTheme">{{themeIcon}}</text>
+    <text class="config-btn" bindtap="showConfig">⚙️</text>
+  </view>
+
+  <!-- 主内容区 - Swiper五页面滑动 -->
+  <swiper class="main-swiper" current="{{currentTab}}" duration="{{300}}"
+          bindchange="onSwiperChange" style="height:{{swiperHeight}}px;">
+    
+    <!-- ========== 第一页：传感器数据 + 可视化 + 报警 ========== -->
+    <swiper-item>
+      <scroll-view scroll-y class="page-scroll" enhanced show-scrollbar="{{false}}">
+        <!-- 报警横幅 -->
+        <view class="alarm-banner {{hasAlarm ? 'active' : ''}}" wx:if="{{hasAlarm}}">
+          <view class="alarm-icon">⚠️</view>
+          <scroll-view scroll-x class="alarm-scroll" enhanced show-scrollbar="{{false}}">
+            <text class="alarm-text">{{alarmMessage}}</text>
+          </scroll-view>
+          <text class="alarm-dismiss" bindtap="dismissAlarm">✕</text>
+        </view>
+
+        <!-- 传感器四宫格 -->
+        <view class="sensor-grid">
+          <view class="sensor-card {{tempAlarm ? 'alarm' : ''}}" bindtap="selectSensor" data-type="temp">
+            <view class="sensor-icon temp-icon"><text>🌡️</text></view>
+            <view class="sensor-body">
+              <text class="sensor-name">温度</text>
+              <view class="sensor-value-row">
+                <text class="sensor-value">{{temperature}}</text>
+                <text class="sensor-unit">°C</text>
+              </view>
+              <view class="sensor-trend-row">
+                <text class="trend {{tempTrendClass}}">{{tempTrendIcon}}</text>
+                <text class="sensor-desc">{{tempAlarm ? '⚠ 超限!' : '环境温度'}}</text>
+              </view>
+            </view>
+            <view class="sensor-bar temp-bar" style="width:{{tempBarWidth}}"></view>
+          </view>
+
+          <view class="sensor-card {{humAlarm ? 'alarm' : ''}}" bindtap="selectSensor" data-type="humidity">
+            <view class="sensor-icon hum-icon"><text>💧</text></view>
+            <view class="sensor-body">
+              <text class="sensor-name">湿度</text>
+              <view class="sensor-value-row">
+                <text class="sensor-value">{{humidity}}</text>
+                <text class="sensor-unit">%RH</text>
+              </view>
+              <view class="sensor-trend-row">
+                <text class="trend {{humTrendClass}}">{{humTrendIcon}}</text>
+                <text class="sensor-desc">{{humAlarm ? '⚠ 超限!' : '相对湿度'}}</text>
+              </view>
+            </view>
+            <view class="sensor-bar hum-bar" style="width:{{humBarWidth}}"></view>
+          </view>
+
+          <view class="sensor-card {{mq2Alarm ? 'alarm' : ''}}" bindtap="selectSensor" data-type="mq2">
+            <view class="sensor-icon mq2-icon"><text>🌫️</text></view>
+            <view class="sensor-body">
+              <text class="sensor-name">MQ-2</text>
+              <view class="sensor-value-row">
+                <text class="sensor-value">{{mq2}}</text>
+                <text class="sensor-unit">ppm</text>
+              </view>
+              <view class="sensor-trend-row">
+                <text class="trend {{mq2TrendClass}}">{{mq2TrendIcon}}</text>
+                <text class="sensor-desc">{{mq2Alarm ? '⚠ 超限!' : '可燃气体'}}</text>
+              </view>
+            </view>
+            <view class="sensor-bar mq2-bar" style="width:{{mq2BarWidth}}"></view>
+          </view>
+
+          <view class="sensor-card {{waterAlarm ? 'alarm' : ''}}" bindtap="selectSensor" data-type="water">
+            <view class="sensor-icon water-icon"><text>🌊</text></view>
+            <view class="sensor-body water-card-body">
+              <view class="water-header-row">
+                <text class="sensor-name">水位</text>
+                <view class="water-progress-ring {{waterLevelClass}}">
+                  <view class="progress-circle" style="background: conic-gradient({{waterLevelColor}} {{waterPercent * 3.6}}deg, rgba(255,255,255,0.1) 0deg)">
+                    <view class="progress-inner">
+                      <text class="progress-percent">{{waterPercent}}%</text>
+                    </view>
+                  </view>
+                </view>
+              </view>
+              <view class="sensor-value-row">
+                <text class="sensor-value">{{waterLevel}}</text>
+                <text class="sensor-unit">mm</text>
+              </view>
+              <view class="sensor-trend-row">
+                <text class="trend {{waterTrendClass}}">{{waterTrendIcon}}</text>
+                <text class="sensor-desc">{{waterAlarm ? '⚠ 超限!' : '距离传感'}}</text>
+              </view>
+            </view>
+            <view class="sensor-bar water-bar" style="width:{{waterBarWidth}}"></view>
+          </view>
+        </view>
+
+        <!-- 报警阈值设置面板 -->
+        <view class="alarm-config-panel">
+          <view class="panel-header" bindtap="toggleAlarmConfig">
+            <text class="panel-title">🔔 报警阈值设置</text>
+            <text class="panel-arrow {{showAlarmConfig ? 'open' : ''}}">▼</text>
+          </view>
+          <view class="panel-content {{showAlarmConfig ? 'open' : ''}}" wx:if="{{showAlarmConfig}}">
+            <view class="threshold-row">
+              <text class="th-label">🌡️ 温度</text>
+              <view class="th-inputs">
+                <input type="digit" class="th-input" value="{{alarmThreshold.tempMin}}" placeholder="下限"
+                       bindinput="onThresholdInput" data-field="tempMin"/>
+                <text class="th-sep">~</text>
+                <input type="digit" class="th-input" value="{{alarmThreshold.tempMax}}" placeholder="上限"
+                       bindinput="onThresholdInput" data-field="tempMax"/>
+                <text class="th-unit">°C</text>
+              </view>
+            </view>
+            <view class="threshold-row">
+              <text class="th-label">💧 湿度</text>
+              <view class="th-inputs">
+                <input type="digit" class="th-input" value="{{alarmThreshold.humMin}}" placeholder="下限"
+                       bindinput="onThresholdInput" data-field="humMin"/>
+                <text class="th-sep">~</text>
+                <input type="digit" class="th-input" value="{{alarmThreshold.humMax}}" placeholder="上限"
+                       bindinput="onThresholdInput" data-field="humMax"/>
+                <text class="th-unit">%</text>
+              </view>
+            </view>
+            <view class="threshold-row">
+              <text class="th-label">🌫️ MQ-2</text>
+              <view class="th-inputs">
+                <input type="digit" class="th-input" value="{{alarmThreshold.mq2Max}}" placeholder="上限"
+                       bindinput="onThresholdInput" data-field="mq2Max"/>
+                <text class="th-unit">ppm (上限)</text>
+              </view>
+            </view>
+            <view class="threshold-row">
+              <text class="th-label">🌊 水位</text>
+              <view class="th-inputs">
+                <input type="digit" class="th-input" value="{{alarmThreshold.waterMax}}" placeholder="上限"
+                       bindinput="onThresholdInput" data-field="waterMax"/>
+                <text class="th-unit">mm (上限)</text>
+              </view>
+            </view>
+            <button class="reset-threshold-btn" bindtap="resetAlarmToDefault">🔄 重置为默认值</button>
+            <button class="save-threshold-btn" bindtap="saveAlarmThreshold">保存阈值配置</button>
+          </view>
+        </view>
+
+        <!-- 数据可视化图表 -->
+        <view class="chart-section">
+          <view class="chart-header">
+            <view class="chart-title-row">
+              <text class="chart-icon">📊</text>
+              <text class="chart-title">{{chartTitle}}</text>
+            </view>
+            <view class="chart-range-btns">
+              <view class="range-btn {{chartRange === 20 ? 'active' : ''}}" bindtap="setChartRange" data-range="20">20</view>
+              <view class="range-btn {{chartRange === 50 ? 'active' : ''}}" bindtap="setChartRange" data-range="50">50</view>
+              <view class="range-btn {{chartRange === 100 ? 'active' : ''}}" bindtap="setChartRange" data-range="100">100</view>
+            </view>
+          </view>
+          <canvas type="2d" id="sensorChart" class="chart-canvas" bindtouchstart="onChartTouch"></canvas>
+          <view class="chart-legend">
+            <view class="legend-item {{!legendTemp ? 'dim' : ''}}" bindtap="toggleLegend" data-index="0">
+              <view class="legend-dot" style="background:#ef4444;"></view><text>温度</text>
+            </view>
+            <view class="legend-item {{!legendHumidity ? 'dim' : ''}}" bindtap="toggleLegend" data-index="1">
+              <view class="legend-dot" style="background:#3b82f6;"></view><text>湿度</text>
+            </view>
+            <view class="legend-item {{!legendMq2 ? 'dim' : ''}}" bindtap="toggleLegend" data-index="2">
+              <view class="legend-dot" style="background:#f59e0b;"></view><text>MQ-2</text>
+            </view>
+            <view class="legend-item {{!legendWater ? 'dim' : ''}}" bindtap="toggleLegend" data-index="3">
+              <view class="legend-dot" style="background:#10b981;"></view><text>水位</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 更新时间 -->
+        <view class="update-info">
+          <text class="update-time-text">🕐 最后更新: {{updateTime}}</text>
+        </view>
+      </scroll-view>
+    </swiper-item>
+
+    <!-- ========== 第二页：外设控制面板 ========== -->
+    <swiper-item>
+      <scroll-view scroll-y class="page-scroll control-page-scroll" enhanced show-scrollbar="{{false}}">
+        <include src="/pages/control/control.wxml" />
+      </scroll-view>
+    </swiper-item>
+
+    <!-- ========== 第三页：视频流 + 拍照 ========== -->
+    <swiper-item>
+      <scroll-view scroll-y class="page-scroll" enhanced show-scrollbar="{{false}}">
+        <!-- 视频画面（微信小程序不支持MJPEG流，统一使用快照模式） -->
+        <view class="video-container">
+          <block wx:if="{{videoUrl && !videoPaused}}">
+            <image src="{{videoUrl}}" mode="aspectFill" class="video-feed" webp="false" lazy-load="false"></image>
+          </block>
+          <block wx:else>
+            <view class="video-feed video-placeholder">
+              <text class="placeholder-icon">{{videoPaused ? '⏸️' : '📡'}}</text>
+              <text class="placeholder-txt">{{videoPaused ? '已暂停' : '未连接'}}</text>
+            </view>
+          </block>
+          <view class="video-overlay-top">
+            <view class="live-badge">
+              <view class="live-dot {{videoPaused ? '' : 'live'}}"></view>
+              <text>{{videoPaused ? '已暂停' : 'LIVE'}}</text>
+            </view>
+          </view>
+          <view class="video-overlay-bottom">
+            <text class="stream-status">{{streamStatus}}</text>
+          </view>
+        </view>
+
+        <!-- 视频控制条 -->
+        <view class="video-controls">
+          <button class="ctrl-btn {{videoPaused ? '' : 'inactive'}}" bindtap="startVideo" disabled="{{!videoPaused}}">
+            <text class="ctrl-icon">▶️</text>
+            <text>播放</text>
+          </button>
+          <button class="ctrl-btn {{videoPaused ? 'inactive' : ''}}" bindtap="pauseVideo" disabled="{{videoPaused}}">
+            <text class="ctrl-icon">⏸️</text>
+            <text>暂停</text>
+          </button>
+          <button class="ctrl-btn {{useSnapshotMode ? 'active' : ''}}" bindtap="toggleVideoMode">
+            <text class="ctrl-icon">{{useSnapshotMode ? '📷' : '🎬'}}</text>
+            <text>{{useSnapshotMode ? '快照' : '视频'}}</text>
+          </button>
+          <button class="ctrl-btn capture-main" bindtap="takePhoto" disabled="{{isPhotoLocked}}">
+            <text class="ctrl-icon">📸</text>
+            <text>拍照</text>
+          </button>
+        </view>
+
+        <!-- 拍照结果 -->
+        <view class="photo-section">
+          <view class="photo-header">
+            <text class="photo-title">📷 拍摄照片</text>
+            <text class="photo-count" wx:if="{{hasImage}}">已捕获</text>
+          </view>
+          <view class="photo-display {{hasImage ? 'has-photo' : ''}}">
+            <block wx:if="{{hasImage}}">
+              <image src="{{capturedPhoto}}" mode="aspectFit" class="captured-img"></image>
+              <view class="photo-time-tag">{{photoTimestamp}}</view>
+            </block>
+            <block wx:else>
+              <view class="photo-empty">
+                <text class="empty-icon">📷</text>
+                <text class="empty-hint">点击上方拍照按钮捕获画面</text>
+              </view>
+            </block>
+          </view>
+          <view class="photo-actions" wx:if="{{hasImage}}">
+            <button class="action-btn primary" bindtap="useForAI" disabled="{{isPhotoLocked}}">
+              <text>🧠 用于AI识别</text>
+            </button>
+            <button class="action-btn danger" bindtap="clearPhoto" disabled="{{isPhotoLocked}}">
+              <text>🗑️ 清除</text>
+            </button>
+          </view>
+          
+          <!-- YOLO检测结果展示 -->
+          <view class="yolo-result-container" wx:if="{{showYoloResult}}">
+            <view class="yolo-header">
+              <text class="yolo-icon">🎯</text>
+              <text class="yolo-title">目标检测结果</text>
+              <text class="yolo-count">{{detectionCount}} 个目标</text>
+              <text class="yolo-close" bindtap="closeYoloResult">✖</text>
+            </view>
+            
+            <canvas 
+              type="2d" 
+              id="yoloCanvas" 
+              class="yolo-canvas"
+              style="width: 100%; height: 400rpx;">
+            </canvas>
+            
+            <scroll-view class="detection-scroll-list" scroll-y enhanced show-scrollbar="{{false}}" style="max-height: 300rpx;">
+              <view class="detection-list">
+                <view 
+                  wx:for="{{yoloDetections}}" 
+                  wx:key="index"
+                  class="detection-item {{currentDetIndex === index ? 'active' : ''}}"
+                  bindtap="onDetectionItemTap"
+                  data-index="{{index}}"
+                >
+                  <view class="det-color-dot" style="background-color: {{item.color}};"></view>
+                  <view class="det-info">
+                    <text class="det-label-text">{{item.label}}</text>
+                    <text class="det-score-text">置信度: {{item.confidenceText}}</text>
+                  </view>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+        </view>
+      </scroll-view>
+    </swiper-item>
+
+    <!-- ========== 第四页：AI大模型识别 ========== -->
+    <swiper-item>
+      <scroll-view scroll-y class="page-scroll" enhanced show-scrollbar="{{false}}">
+        <!-- AI模式选择卡片 -->
+        <view class="ai-mode-card">
+          <text class="ai-mode-label">识别引擎</text>
+          <view class="ai-mode-options">
+            <view class="mode-opt {{aiMode === 'llm' ? 'selected' : ''}}" bindtap="switchAIMode" data-mode="llm">
+              <text class="mode-emoji">🌐</text>
+              <text class="mode-name">云端LLM</text>
+              <text class="mode-desc">GPT/千问/Kimi等</text>
+            </view>
+            <view class="mode-opt {{aiMode === 'yolo' ? 'selected' : ''}}" bindtap="switchAIMode" data-mode="yolo">
+              <text class="mode-emoji">🎯</text>
+              <text class="mode-name">YOLO检测</text>
+              <text class="mode-desc">目标识别定位</text>
+            </view>
+            <view class="mode-opt {{aiMode === 'local' ? 'selected' : ''}}" bindtap="switchAIMode" data-mode="local">
+              <text class="mode-emoji">🔧</text>
+              <text class="mode-name">本地分析</text>
+              <text class="mode-desc">设备端基础分析</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- LLM模型选择（仅在LLM模式下显示） -->
+        <view class="llm-model-card" wx:if="{{aiMode === 'llm'}}">
+          <text class="llm-model-label">选择大模型</text>
+          <view class="llm-model-options">
+            <view class="llm-model-opt {{selectedLlmModel === 'qwen' ? 'selected' : ''}}" bindtap="switchLlmModel" data-model="qwen">
+              <text class="llm-model-name">🌐 通义千问</text>
+              <text class="llm-model-desc">阿里云·国内可用</text>
+            </view>
+            <view class="llm-model-opt {{selectedLlmModel === 'gpt' ? 'selected' : ''}}" bindtap="switchLlmModel" data-model="gpt">
+              <text class="llm-model-name">🤖 GPT-4</text>
+              <text class="llm-model-desc">OpenAI·需要代理</text>
+            </view>
+            <view class="llm-model-opt {{selectedLlmModel === 'kimi' ? 'selected' : ''}}" bindtap="switchLlmModel" data-model="kimi">
+              <text class="llm-model-name">🌙 Kimi</text>
+              <text class="llm-model-desc">月之暗面·国内可用</text>
+            </view>
+            <view class="llm-model-opt {{selectedLlmModel === 'deepseek' ? 'selected' : ''}}" bindtap="switchLlmModel" data-model="deepseek">
+              <text class="llm-model-name">🔵 DeepSeek</text>
+              <text class="llm-model-desc">深度求索·国内可用</text>
+            </view>
+          </view>
+        </view>
+
+        <!-- 图片预览 -->
+        <view class="ai-image-area" wx:if="{{hasImage}}">
+          <image src="{{capturedPhoto}}" mode="aspectFit" class="ai-preview-img"></image>
+          <view class="ai-image-tag">待分析图片</view>
+        </view>
+        <view class="ai-image-area empty" wx:else>
+          <view class="no-image-hint">
+            <text class="hint-icon">🖼️</text>
+            <text class="hint-text">请先在「视频拍照」页面拍摄照片</text>
+            <text class="hint-sub" bindtap="goToCameraTab">点击跳转到拍照页 →</text>
+          </view>
+        </view>
+
+        <!-- 问题输入 -->
+        <view class="ai-question-area">
+          <textarea class="ai-question-input" value="{{aiQuestion}}" placeholder="输入你的问题，例如：图片里有什么？请详细描述..."
+                    auto-height maxlength="500" bindinput="bindQuestionInput"></textarea>
+          <button class="ai-submit-btn {{isAILoading ? 'loading' : ''}}" bindtap="askAI"
+                  disabled="{{!hasImage || isPhotoLocked || isAILoading}}">
+            <text wx:if="{{!isAILoading}}">🚀 开始识别</text>
+            <text wx:else>⏳ 识别中...</text>
+          </button>
+        </view>
+
+        <!-- AI结果展示  -->
+        <view class="ai-result-area {{aiResultStatus}}" wx:if="{{aiResult || aiError || aiResultStatus === 'pending'}}">
+          
+          <!-- 成功状态 -->
+          <block wx:if="{{aiResultStatus === 'success' && aiResult}}">
+            <!-- 结果头部：来源标签 + 元数据 -->
+            <view class="result-header-enhanced">
+              <view class="result-meta-row">
+                <view class="source-badge {{aiSource === 'llm' ? 'badge-llm' : aiSource === 'yolo' ? 'badge-yolo' : 'badge-local'}}">
+                  <text class="source-icon">{{aiSource === 'llm' ? '🌐' : aiSource === 'yolo' ? '🎯' : '🔧'}}</text>
+                  <text class="source-text">{{aiSource === 'llm' ? '云端大模型' : aiSource === 'yolo' ? '目标检测' : '本地分析'}}</text>
+                </view>
+                <view class="meta-info" wx:if="{{aiResponseTime}}">
+                  <text class="meta-time">⏱ {{aiResponseTime}}s</text>
+                  <text class="meta-length">{{aiResultLength}}字</text>
+                </view>
+              </view>
+              
+              <!-- 问题回顾 -->
+              <view class="question-review" wx:if="{{aiQuestion}}">
+                <text class="q-label">Q:</text>
+                <text class="q-content">{{aiQuestion}}</text>
+              </view>
+            </view>
+
+            <!-- 结果主体 - 支持打字机效果 -->
+            <view class="result-body-enhanced {{isTyping ? 'typing-active' : ''}}">
+              <scroll-view scroll-y class="result-scroll" enhanced show-scrollbar="{{false}}">
+                
+                <!-- 结构化内容展示（自动解析） -->
+                <view class="structured-result" wx:if="{{aiStructuredContent}}">
+                  
+                  <!-- 标题/摘要区 -->
+                  <view class="content-summary" wx:if="{{aiStructuredContent.summary}}">
+                    <text class="summary-text">{{aiStructuredContent.summary}}</text>
+                  </view>
+
+                  <!-- 详细描述列表 -->
+                  <view class="content-details" wx:if="{{aiStructuredContent.details && aiStructuredContent.details.length > 0}}">
+                    <view class="detail-item" wx:for="{{aiStructuredContent.details}}" wx:key="index" wx:if="{{item}}">
+                      <text class="detail-bullet">•</text>
+                      <text class="detail-text">{{item}}</text>
+                    </view>
+                  </view>
+
+                  <!-- 关键词标签 -->
+                  <view class="keyword-tags" wx:if="{{aiStructuredContent.keywords && aiStructuredContent.keywords.length > 0}}">
+                    <text class="tag-item" wx:for="{{aiStructuredContent.keywords}}" wx:key="index">#{{item}}</text>
+                  </view>
+
+                  <!-- 原始文本（当没有结构化时显示） -->
+                  <view class="raw-content" wx:else>
+                    <text class="result-text-formatted">{{aiDisplayText || aiResult}}</text>
+                  </view>
+                </view>
+
+                <!-- 无结构化时直接显示 -->
+                <view class="plain-result" wx:else>
+                  <text class="result-text-formatted">{{aiDisplayText || aiResult}}</text>
+                </view>
+              </scroll-view>
+            </view>
+
+            <!-- 操作按钮栏 -->
+            <view class="result-actions-bar">
+              <button class="action-btn" bindtap="copyAiResult" hover-class="action-hover">
+                <text>📋 复制</text>
+              </button>
+              <button class="action-btn" open-type="share" hover-class="action-hover">
+                <text>📤 分享</text>
+              </button>
+              <button class="action-btn secondary" bindtap="retryAi" hover-class="action-hover" disabled="{{isAILoading}}">
+                <text>🔄 重试</text>
+              </button>
+            </view>
+          </block>
+
+          <!-- 加载中状态 - 动画展示 -->
+          <block wx:elif="{{aiResultStatus === 'pending' || isAILoading}}">
+            <view class="loading-state">
+              <view class="loading-animation">
+                <view class="pulse-ring"></view>
+                <view class="pulse-ring delay-1"></view>
+                <view class="pulse-ring delay-2"></view>
+                <text class="loading-icon">🤖</text>
+              </view>
+              <text class="loading-text-main">AI正在思考中...</text>
+              <text class="loading-sub-text">{{aiLoadingTip || '正在分析图像并生成回复'}}</text>
+              
+              <!-- 进度提示 -->
+              <view class="loading-progress-hints">
+                <text class="hint-step {{loadingStep >= 1 ? 'active' : ''}}">✓ 接收图片</text>
+                <text class="hint-sep">→</text>
+                <text class="hint-step {{loadingStep >= 2 ? 'active' : ''}}">✓ 调用模型</text>
+                <text class="hint-sep">→</text>
+                <text class="hint-step {{loadingStep >= 3 ? 'active' : ''}}">等待回复...</text>
+              </view>
+            </view>
+          </block>
+
+          <!-- 错误状态 - 友好提示 -->
+          <block wx:elif="{{aiResultStatus === 'error' || aiError}}">
+            <view class="error-state-enhanced">
+              <view class="error-visual">
+                <text class="error-big-icon">😵</text>
+              </view>
+              <text class="error-title">识别遇到问题</text>
+              <text class="error-detail">{{aiError || '未知错误'}}</text>
+              
+              <!-- 错误解决方案 -->
+              <view class="error-solutions" wx:if="{{aiErrorSolutions && aiErrorSolutions.length > 0}}">
+                <text class="solution-title">💡 可能的解决方法：</text>
+                <view class="solution-list">
+                  <view class="solution-item" wx:for="{{aiErrorSolutions}}" wx:key="index" bindtap="applySolution" data-index="{{index}}">
+                    <text class="solution-num">{{index + 1}}</text>
+                    <text class="solution-text">{{item.text}}</text>
+                  </view>
+                </view>
+              </view>
+
+              <!-- 快速操作 -->
+              <view class="error-actions">
+                <button class="error-action-btn primary" bindtap="retryAi" disabled="{{isAILoading}}">
+                  🔄 重新尝试
+                </button>
+                <button class="error-action-btn" bindtap="goToTestTab">
+                  🔧 检查配置
+                </button>
+                <button class="error-action-btn secondary" bindtap="copyAiErrorLog" wx:if="{{aiErrorLogAvailable}}">
+                  📋 复制日志
+                </button>
+                <button class="error-action-btn warning" bindtap="switchToAlternativeProvider" wx:if="{{alternativeProviderAvailable}}">
+                  🔀 切换服务商
+                </button>
+              </view>
+
+              <!-- 技术详情（可折叠）v4.0 新增 -->
+              <view class="tech-details-collapsible" wx:if="{{aiErrorDetails}}">
+                <view class="collapse-toggle" bindtap="toggleAiErrorDetails">
+                  <text>{{showAiErrorDetails ? '收起技术详情 ▲' : '查看技术详情 ▼'}}</text>
+                </view>
+                
+                <scroll-view 
+                  class="tech-details-content {{showAiErrorDetails ? 'open' : ''}}" 
+                  scroll-y 
+                  enhanced 
+                  show-scrollbar="{{false}}"
+                  wx:if="{{showAiErrorDetails}}"
+                >
+                  <view class="detail-row">
+                    <text class="detail-label">错误类型:</text>
+                    <text class="detail-value">{{aiErrorType || 'N/A'}}</text>
+                  </view>
+                  <view class="detail-row">
+                    <text class="detail-label">HTTP状态码:</text>
+                    <text class="detail-value">{{aiErrorCode || 'N/A'}}</text>
+                  </view>
+                  <view class="detail-row">
+                    <text class="detail-label">请求ID:</text>
+                    <text class="detail-value mono">{{aiErrorRequestId || 'N/A'}}</text>
+                  </view>
+                  <view class="detail-row">
+                    <text class="detail-label">发生时间:</text>
+                    <text class="detail-value">{{aiErrorTime || 'N/A'}}</text>
+                  </view>
+                  <view class="detail-row" wx:if="{{aiErrorMessageRaw}}">
+                    <text class="detail-label">原始信息:</text>
+                    <text class="detail-value mono small">{{aiErrorMessageRaw}}</text>
+                  </view>
+                  
+                  <!-- 降级提示 -->
+                  <view class="fallback-notice" wx:if="{{aiFallbackUsed}}">
+                    <text class="fallback-icon">⚠️</text>
+                    <text class="fallback-text">已自动降级到 {{aiFallbackProvider}} 服务</text>
+                  </view>
+                </scroll-view>
+              </view>
+
+            </view>
+          </block>
+        </view>
+
+        <!-- 空状态占位 -->
+        <view class="ai-result-area empty-state" wx:if="{{!aiResult && !aiError && aiResultStatus !== 'pending' && !isAILoading}}">
+          <view class="empty-visual">
+            <text class="empty-icon">🧠</text>
+          </view>
+          <text class="empty-title">AI视觉识别助手</text>
+          <text class="empty-desc">拍摄照片后，我可以帮你识别图片内容、分析场景、回答问题</text>
+          <view class="empty-features">
+            <text class="feature-tag">📷 图像识别</text>
+            <text class="feature-tag">📝 场景描述</text>
+            <text class="feature-tag">❓ 智能问答</text>
+          </view>
+        </view>
+
+        <!-- 历史记录（可选） -->
+        <view class="ai-history-section" wx:if="{{aiHistory.length > 0}}">
+          <text class="history-title">📋 识别历史</text>
+          <view class="history-list">
+            <view class="history-item" wx:for="{{aiHistory}}" wx:key="index" bindtap="viewHistoryItem" data-index="{{index}}">
+              <text class="history-mode {{item.mode === 'llm' ? 'tag-llm' : item.mode === 'yolo' ? 'tag-yolo' : 'tag-local'}}">
+                {{item.mode === 'llm' ? 'LLM' : item.mode === 'yolo' ? 'YOLO' : '本地'}}
+              </text>
+              <text class="history-q">{{item.question}}</text>
+              <text class="history-time">{{item.time}}</text>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </swiper-item>
+
+    <!-- ========== 第五页：测试工具 ========== -->
+    <swiper-item>
+      <scroll-view scroll-y class="page-scroll" enhanced show-scrollbar="{{false}}">
+        
+        <!-- 网络诊断工具 -->
+        <view class="test-section">
+          <view class="test-section-header">
+            <text class="test-section-icon">🌐</text>
+            <text class="test-section-title">网络诊断工具</text>
+          </view>
+          
+          <!-- ESP32地址配置 -->
+          <view class="test-config-box">
+            <view class="test-row">
+              <text class="test-label">ESP32 IP:</text>
+              <input class="test-input" value="{{esp32Ip}}" placeholder="192.168.x.x"
+                     bindinput="inputTestIp"/>
+            </view>
+            <view class="test-row">
+              <text class="test-label">端口:</text>
+              <input class="test-input test-input-sm" value="{{esp32Port}}" placeholder="80"
+                     type="number" bindinput="inputTestPort"/>
+            </view>
+          </view>
+
+          <!-- 测试按钮组 -->
+          <button class="test-main-btn {{isTesting ? 'testing' : ''}}" bindtap="runFullTest"
+                  disabled="{{isTesting}}">
+            <text>{{isTesting ? '⏳ 诊断中...' : '🔍 开始完整诊断'}}</text>
+          </button>
+
+          <!-- 快速测试按钮 -->
+          <view class="quick-test-grid">
+            <button class="quick-btn" bindtap="testSensorsApi">传感器API</button>
+            <button class="quick-btn" bindtap="testCaptureApi">拍照接口</button>
+            <button class="quick-btn" bindtap="testStreamApi">视频流</button>
+            <button class="quick-btn secondary" bindtap="checkNetworkStatus">网络状态</button>
+          </view>
+
+          <!-- 诊断结果 -->
+          <view class="test-results-box" wx:if="{{testResults.length > 0}}">
+            <text class="results-title">📋 诊断结果</text>
+            <view class="results-list">
+              <view wx:for="{{testResults}}" wx:key="index"
+                    class="result-entry {{item.success ? 'success' : 'fail'}}">
+                <view class="entry-header">
+                  <text class="entry-status">{{item.success ? '✅' : '❌'}}</text>
+                  <text class="entry-name">{{item.name}}</text>
+                  <text class="entry-time">{{item.time}}</text>
+                </view>
+                <text class="entry-detail" wx:if="{{item.detail}}">{{item.detail}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+
+        <!-- LLM大模型验证测试 -->
+        <view class="test-section ai-test-section">
+          <view class="test-section-header">
+            <text class="test-section-icon">🧪</text>
+            <text class="test-section-title">大模型 (LLM) 验证测试</text>
+          </view>
+
+          <view class="ai-test-config">
+            <view class="test-row">
+              <text class="test-label">服务提供商:</text>
+              <picker mode="selector" range="{{aiProviders}}" range-key="name" 
+                      value="{{selectedProviderIndex}}" bindchange="pickAiProvider" style="flex:1;">
+                <view class="picker-display">{{selectedProvider.name || '选择服务'}}</view>
+              </picker>
+            </view>
+            <view class="test-row">
+              <text class="test-label">API地址:</text>
+              <input class="test-input" value="{{aiTestUrl}}" placeholder="https://api.openai.com/..."
+                     bindinput="inputAiTestUrl" data-service="{{selectedProvider.key}}"/>
+            </view>
+            <view class="test-row">
+              <text class="test-label">API Key:</text>
+              <input class="test-input" value="{{aiTestKey}}" placeholder="sk-..."
+                     password="{{true}}" bindinput="inputAiTestKey" data-service="{{selectedProvider.key}}"/>
+            </view>
+            <view class="test-row">
+              <text class="test-label">模型:</text>
+              <picker mode="selector" range="{{modelList}}" range-key="name"
+                      value="{{selectedModelIndex}}" bindchange="pickModel" style="flex:1;">
+                <view class="picker-display">{{aiTestModel || '选择模型'}}</view>
+              </picker>
+            </view>
+            <view class="test-row">
+              <text class="test-label">超时(s):</text>
+              <input class="test-input test-input-xs" value="{{aiTestTimeout}}" placeholder="30"
+                     type="number" bindinput="inputAiTimeout" data-service="{{selectedProvider.key}}"/>
+            </view>
+            
+            <textarea class="ai-test-question" value="{{aiTestQuestion}}"
+                      placeholder="输入测试问题..."
+                      maxlength="500" auto-height
+                      bindinput="inputAiQuestion"></textarea>
+          </view>
+
+          <view class="ai-test-actions">
+            <button class="test-action-btn primary" bindtap="runAiTest"
+                    disabled="{{isAiTesting}}">
+              {{isAiTesting ? '⏳ 测试中...' : '🚀 运行LLM测试'}}
+            </button>
+            <button class="test-action-btn" bindtap="saveAiConfigToStorage">💾 保存配置</button>
+            <button class="test-action-btn accent" bindtap="syncAiToEsp32">📡 同步到ESP32</button>
+          </view>
+
+          <!-- LLM测试结果 -->
+          <view class="ai-test-result {{aiTestStatus}}" wx:if="{{aiTestResult}}">
+            <view class="result-badge-inline {{aiTestStatus === 'success' ? 'bg-success' : aiTestStatus === 'error' ? 'bg-error' : 'bg-pending'}}">
+              {{aiTestStatus === 'success' ? '✅ 成功' : aiTestStatus === 'error' ? '❌ 失败' : '⏳ 等待中'}}
+            </view>
+            <text class="result-content-text">{{aiTestResult}}</text>
+          </view>
+        </view>
+
+        <!-- 自动控制入口 -->
+        <view class="test-section auto-control-section">
+          <view class="test-section-header">
+            <text class="test-section-icon">🤖</text>
+            <text class="test-section-title">超限自动控制</text>
+          </view>
+          <text class="test-desc">配置传感器阈值，实现自动报警和外设控制</text>
+          <button class="test-main-btn accent" bindtap="goToAutoControl">
+            <text>⚙️ 配置自动规则</text>
+          </button>
+        </view>
+
+        <!-- 常见问题提示 -->
+        <view class="tips-box">
+          <text class="tips-title">💡 常见问题</text>
+          <view class="tip-item">
+            <text class="tip-q">连接失败?</text>
+            <text class="tip-a">确保手机和ESP32在同一WiFi网络</text>
+          </view>
+          <view class="tip-item">
+            <text class="tip-q">IP变化?</text>
+            <text class="tip-a">查看ESP32串口输出获取最新IP地址</text>
+          </view>
+          <view class="tip-item">
+            <text class="tip-q">调试模式?</text>
+            <text class="tip-a">微信开发者工具 → 详情 → 本地设置 → 勾选不校验域名</text>
+          </view>
+        </view>
+
+      </scroll-view>
+    </swiper-item>
+  </swiper>
+
+  <!-- 底部自定义TabBar -->
+  <view class="tabbar">
+    <view class="tab-item {{currentTab === 0 ? 'active' : ''}}" bindtap="switchTab" data-index="0">
+      <view class="tab-icon-wrap">
+        <text class="tab-icon">{{currentTab === 0 ? '📊' : '📈'}}</text>
+      </view>
+      <text class="tab-text">监测</text>
+      <view class="tab-indicator" wx:if="{{currentTab === 0}}"></view>
+      <view class="alarm-dot" wx:if="{{hasAlarm && currentTab !== 0}}"></view>
+    </view>
+    <view class="tab-item {{currentTab === 1 ? 'active' : ''}}" bindtap="switchTab" data-index="1">
+      <view class="tab-icon-wrap">
+        <text class="tab-icon">{{currentTab === 1 ? '🎛️' : '�'}}</text>
+      </view>
+      <text class="tab-text">控制</text>
+      <view class="tab-indicator" wx:if="{{currentTab === 1}}"></view>
+    </view>
+    <view class="tab-item {{currentTab === 2 ? 'active' : ''}}" bindtap="switchTab" data-index="2">
+      <view class="tab-icon-wrap">
+        <text class="tab-icon">{{currentTab === 2 ? '📹' : '📷'}}</text>
+      </view>
+      <text class="tab-text">视频</text>
+      <view class="tab-indicator" wx:if="{{currentTab === 2}}"></view>
+    </view>
+    <view class="tab-item {{currentTab === 3 ? 'active' : ''}}" bindtap="switchTab" data-index="3">
+      <view class="tab-icon-wrap">
+        <text class="tab-icon">{{currentTab === 3 ? '🤖' : '🧠'}}</text>
+      </view>
+      <text class="tab-text">AI</text>
+      <view class="tab-indicator" wx:if="{{currentTab === 3}}"></view>
+    </view>
+    <view class="tab-item {{currentTab === 4 ? 'active' : ''}}" bindtap="switchTab" data-index="4">
+      <view class="tab-icon-wrap">
+        <text class="tab-icon">{{currentTab === 4 ? '🔧' : '⚙️'}}</text>
+      </view>
+      <text class="tab-text">测试</text>
+      <view class="tab-indicator" wx:if="{{currentTab === 4}}"></view>
+    </view>
+  </view>
+</view>
